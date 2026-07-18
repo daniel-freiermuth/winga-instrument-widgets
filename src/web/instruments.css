@@ -166,15 +166,15 @@ svg rect.track {
   white-space: nowrap;
 }
 .display-value {
-  font-size: 40px;
+  font-size: min(28vw, 55vh);
   font-weight: 600;
   line-height: 1.05;
 }
 .display-units {
-  font-size: 15px;
+  font-size: 0.38em;
   font-weight: 400;
   color: #9fb3c4;
-  margin-left: 4px;
+  margin-left: 0.1em;
 }
 .display-bottom {
   font-size: 22px;
