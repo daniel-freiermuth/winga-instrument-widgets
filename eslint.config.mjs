@@ -71,7 +71,7 @@ export default ts.config(
     plugins: { 'import-x': importX },
     rules: {
       'import-x/no-extraneous-dependencies': ['error', {
-        devDependencies: ['scripts/**', 'test/**', 'eslint.config.mjs'],
+        devDependencies: ['scripts/**', 'test/**', 'eslint.config.mjs', 'rollup.config.mjs'],
       }],
     },
   },

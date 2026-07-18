@@ -19,12 +19,7 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import pkg from '../package.json'
 
-// When esbuild compiles to CJS, import.meta becomes {} (url = undefined).
-// Fall back to the CJS __dirname global in that case.
-const _dirname: string =
-  typeof import.meta.url === 'string'
-    ? dirname(fileURLToPath(import.meta.url))
-    : __dirname
+const _dirname = dirname(fileURLToPath(import.meta.url))
 
 const PLUGIN_ID = 'signalk-instrument-widgets'
 const ASSET_BASE = `/plotterext/${PLUGIN_ID}`

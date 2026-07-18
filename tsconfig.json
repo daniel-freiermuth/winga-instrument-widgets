@@ -22,7 +22,6 @@
   "include": [
     "src/**/*.ts",
     "plugin/**/*.ts",
-    "scripts/**/*.ts",
     "test/**/*.ts"
   ]
 }

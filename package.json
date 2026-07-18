@@ -16,10 +16,10 @@
     "LICENSE"
   ],
   "scripts": {
-    "build": "node --import tsx/esm scripts/build.ts",
+    "build": "rollup -c",
     "test": "node --import tsx/esm --test test/manifest.test.ts test/units.test.ts",
     "typecheck": "tsc --noEmit",
-    "prepare": "node --import tsx/esm scripts/build.ts",
+    "prepare": "rollup -c",
     "lint": "eslint .",
     "check": "tsc --noEmit && eslint . && node --import tsx/esm --test test/manifest.test.ts test/units.test.ts"
   },
@@ -37,12 +37,15 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@rollup/plugin-json": "^6.1.0",
+    "@rollup/plugin-node-resolve": "^16.0.3",
+    "@rollup/plugin-typescript": "^12.3.0",
     "@types/express": "^5.0.0",
     "@types/node": "^22.0.0",
-    "esbuild": "^0.27.0",
     "eslint": "^10.7.0",
     "eslint-plugin-import-x": "^4.17.1",
     "globals": "^17.7.0",
+    "rollup": "^4.62.2",
     "signalk-plotterext-bus": "^0.10.0",
     "tsx": "^4.19.0",
     "typescript": "^5.6.0",
