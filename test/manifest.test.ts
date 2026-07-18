@@ -68,9 +68,9 @@ test('registers a read-only plotterExtensions provider with a valid manifest', a
 
   const list = await provider.methods.listResources({})
   const ids = Object.keys(list)
-  assert.deepStrictEqual(ids, ['signalk-instrument-widgets'])
+  assert.deepStrictEqual(ids, ['winga-instrument-widgets'])
 
-  const manifest = list['signalk-instrument-widgets']
+  const manifest = list['winga-instrument-widgets']
   assert.strictEqual(getManifestField(manifest, 'apiVersion'), '1')
 
   const requires = getManifestField(manifest, 'requires')
@@ -89,7 +89,7 @@ test('registers a read-only plotterExtensions provider with a valid manifest', a
     assert.ok(typeof size === 'string' && /^[12]x[12]$/.test(size))
     assert.strictEqual(getManifestField(widget, 'type'), 'iframe')
     const url = getManifestField(widget, 'url')
-    assert.ok(typeof url === 'string' && url.startsWith('/plotterext/signalk-instrument-widgets/'))
+    assert.ok(typeof url === 'string' && url.startsWith('/plotterext/winga-instrument-widgets/'))
     assert.strictEqual(getManifestField(widget, 'configPanel'), 'instrument-config')
   }
 
@@ -97,7 +97,7 @@ test('registers a read-only plotterExtensions provider with a valid manifest', a
   assert.ok(Array.isArray(panels))
   assert.strictEqual(getManifestField(panels[0], 'id'), 'instrument-config')
 
-  const single = await provider.methods.getResource('signalk-instrument-widgets')
+  const single = await provider.methods.getResource('winga-instrument-widgets')
   assert.strictEqual(getManifestField(single, 'name'), getManifestField(manifest, 'name'))
   await assert.rejects(() => provider.methods.getResource('nope'))
   await assert.rejects(() => provider.methods.setResource('x', {}))

@@ -21,7 +21,7 @@ import pkg from '../package.json'
 
 const _dirname = dirname(fileURLToPath(import.meta.url))
 
-const PLUGIN_ID = 'signalk-instrument-widgets'
+const PLUGIN_ID = 'winga-instrument-widgets'
 const ASSET_BASE = `/plotterext/${PLUGIN_ID}`
 const PUBLIC_DIR = join(_dirname, '..', 'public')
 const DEMO_SWITCH_PATH = 'electrical.switches.demo.state'
