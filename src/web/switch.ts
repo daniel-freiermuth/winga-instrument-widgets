@@ -2,7 +2,7 @@
 // signalk.put on tap. A short tap toggles; a long press opens configuration
 // (handled by the shared runtime).
 
-import { startInstrument } from './common'
+import { startInstrument, html, raw } from './common'
 import type { InstrumentConfig, ExtensionClient, UpdateArgs } from './common'
 
 interface CurrentState {
@@ -25,8 +25,8 @@ function render({ config, value, client }: UpdateArgs): void {
   const label = config.label ?? config.path ?? 'Not configured'
   const on = isOn(value)
   const known = value !== undefined && value !== null
-  root.innerHTML = `
-  <div class="switch ${known ? (on ? 'on' : 'off') : 'unknown'}">
+  root.innerHTML = html`
+  <div class="switch ${raw(known ? (on ? 'on' : 'off') : 'unknown')}">
     <div class="switch-pill"><div class="switch-knob"></div></div>
     <div class="switch-state">${known ? (on ? 'ON' : 'OFF') : '--'}</div>
     <div class="switch-label">${label}</div>

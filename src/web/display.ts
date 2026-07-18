@@ -6,16 +6,11 @@ import {
   startInstrument,
   resolveDisplay,
   USE_DEFAULT,
-  formatValue
+  formatValue,
+  html,
+  raw
 } from './common'
 import type { UpdateArgs } from './common'
-
-function esc(s: unknown): string {
-  return String(s).replace(
-    /[&<>"]/g,
-    (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c] ?? c
-  )
-}
 
 function render({ config, value, meta, prefs }: UpdateArgs): void {
   const root = document.getElementById('root')
@@ -39,20 +34,18 @@ function render({ config, value, meta, prefs }: UpdateArgs): void {
   const configured = !!config.path
   const rows: string[] = []
   if (config.topLabel) {
-    rows.push(`<div class="display-top">${esc(config.topLabel)}</div>`)
+    rows.push(html`<div class="display-top">${config.topLabel}</div>`)
   }
-  rows.push(
-    `<div class="display-value">${esc(text)}${
-      units ? `<span class="display-units">${esc(units)}</span>` : ''
-    }</div>`
-  )
+  rows.push(html`<div class="display-value">${text}${
+    raw(units ? html`<span class="display-units">${units}</span>` : '')
+  }</div>`)
   if (config.bottomLabel) {
-    rows.push(`<div class="display-bottom">${esc(config.bottomLabel)}</div>`)
+    rows.push(html`<div class="display-bottom">${config.bottomLabel}</div>`)
   }
   if (!configured) {
     rows.push('<div class="display-bottom">Not configured</div>')
   }
-  root.innerHTML = `<div class="display">${rows.join('')}</div>`
+  root.innerHTML = html`<div class="display">${raw(rows.join(''))}</div>`
 }
 
 startInstrument({

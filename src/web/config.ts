@@ -4,7 +4,7 @@
 // live via the host's state.changed event.
 
 import { connectExtension } from 'signalk-plotterext-bus/extension'
-import { CONVERSIONS, USE_DEFAULT } from './common'
+import { CONVERSIONS, USE_DEFAULT, html, raw } from './common'
 import { validConversions } from './units'
 import type { InstrumentConfig } from './common'
 
@@ -90,8 +90,8 @@ async function fetchPaths(pathKind: PathKind): Promise<{
   return { paths: [...new Set(paths)].sort(), unitsByPath }
 }
 
-function fieldRow(id: string, label: string, control: string): string {
-  return `<label class="row"><span>${label}</span>${control}</label>`
+function fieldRow(label: string, control: string): string {
+  return html`<label class="row"><span>${label}</span>${raw(control)}</label>`
 }
 
 function buildForm(
@@ -103,58 +103,38 @@ function buildForm(
   const rows: string[] = []
   rows.push(
     fieldRow(
-      'path',
       'Signal K path',
-      `<input id="path" list="paths" value="${state.path ?? ''}" placeholder="Type to search...">
-       <datalist id="paths">${paths.map((p) => `<option value="${p}">`).join('')}</datalist>`
+      html`<input id="path" list="paths" value="${state.path ?? ''}" placeholder="Type to search...">
+       <datalist id="paths">${raw(paths.map((p) => html`<option value="${p}">`).join(''))}</datalist>`
     )
   )
   if (spec.fields.includes('label')) {
     rows.push(
-      fieldRow(
-        'label',
-        'Label',
-        `<input id="label" value="${state.label ?? ''}" placeholder="Display name">`
-      )
+      fieldRow('Label',
+        html`<input id="label" value="${state.label ?? ''}" placeholder="Display name">`)
     )
   }
   if (spec.fields.includes('topLabel')) {
     rows.push(
-      fieldRow(
-        'topLabel',
-        'Top label',
-        `<input id="topLabel" value="${state.topLabel ?? ''}" placeholder="Small title (blank = hidden)">`
-      )
+      fieldRow('Top label',
+        html`<input id="topLabel" value="${state.topLabel ?? ''}" placeholder="Small title (blank = hidden)">`)
     )
   }
   if (spec.fields.includes('bottomLabel')) {
     rows.push(
-      fieldRow(
-        'bottomLabel',
-        'Bottom label',
-        `<input id="bottomLabel" value="${state.bottomLabel ?? ''}" placeholder="Large label (blank = hidden)">`
-      )
+      fieldRow('Bottom label',
+        html`<input id="bottomLabel" value="${state.bottomLabel ?? ''}" placeholder="Large label (blank = hidden)">`)
     )
   }
   if (spec.fields.includes('convert')) {
-    rows.push(fieldRow('convert', 'Units', `<select id="convert"></select>`))
+    rows.push(fieldRow('Units', `<select id="convert"></select>`))
   }
   if (spec.fields.includes('min')) {
-    rows.push(
-      fieldRow('min', 'Minimum', `<input id="min" type="number" step="any" value="${state.min ?? 0}">`)
-    )
-    rows.push(
-      fieldRow('max', 'Maximum', `<input id="max" type="number" step="any" value="${state.max ?? 10}">`)
-    )
+    rows.push(fieldRow('Minimum', `<input id="min" type="number" step="any" value="${state.min ?? 0}">`))
+    rows.push(fieldRow('Maximum', `<input id="max" type="number" step="any" value="${state.max ?? 10}">`))
   }
   if (spec.fields.includes('decimals')) {
-    rows.push(
-      fieldRow(
-        'decimals',
-        'Decimals',
-        `<input id="decimals" type="number" min="0" max="4" value="${state.decimals ?? 1}">`
-      )
-    )
+    rows.push(fieldRow('Decimals', `<input id="decimals" type="number" min="0" max="4" value="${state.decimals ?? 1}">`))
   }
   return rows.join('')
 }
@@ -239,9 +219,9 @@ async function main(): Promise<void> {
     decimals: typeof stored['decimals'] === 'number' ? stored['decimals'] : undefined
   }
 
-  root.innerHTML = `
+  root.innerHTML = html`
     <h2>Configure ${widgetType}</h2>
-    <form id="form">${buildForm(widgetType, paths, state)}</form>
+    <form id="form">${raw(buildForm(widgetType, paths, state))}</form>
     <p class="status" id="status"></p>
     <div class="actions">
       <button type="button" id="cancel">Cancel</button>

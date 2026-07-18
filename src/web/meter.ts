@@ -4,7 +4,9 @@ import {
   startInstrument,
   resolveDisplay,
   USE_DEFAULT,
-  formatValue
+  formatValue,
+  html,
+  raw
 } from './common'
 import type { UpdateArgs } from './common'
 
@@ -29,12 +31,12 @@ function render({ config, value, meta, prefs }: UpdateArgs): void {
       ? Math.min(100, Math.max(0, display))
       : 0
 
-  root.innerHTML = `
+  root.innerHTML = html`
   <svg viewBox="0 0 200 100" preserveAspectRatio="xMidYMid meet">
     <text x="100" y="18" class="label meter-label">${label}</text>
     <rect x="8" y="28" width="184" height="32" rx="8" class="track"/>
-    <rect x="8" y="28" width="${(184 * pct) / 100}" height="32" rx="8" class="fillbar"/>
-    <text x="100" y="92" class="value meter-value">${formatValue(display, config.decimals ?? 0)}%</text>
+    <rect x="8" y="28" width="${raw(String((184 * pct) / 100))}" height="32" rx="8" class="fillbar"/>
+    <text x="100" y="92" class="value meter-value">${raw(formatValue(display, config.decimals ?? 0))}%</text>
   </svg>`
 }
 

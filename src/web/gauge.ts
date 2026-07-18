@@ -4,7 +4,9 @@ import {
   startInstrument,
   resolveDisplay,
   USE_DEFAULT,
-  formatValue
+  formatValue,
+  html,
+  raw
 } from './common'
 import type { UpdateArgs } from './common'
 
@@ -46,18 +48,18 @@ function render({ config, value, meta, prefs }: UpdateArgs): void {
   const needleDeg = START_ANGLE + SWEEP * frac
 
   const [nx, ny] = polar(50, 53, 38, needleDeg)
-  root.innerHTML = `
+  root.innerHTML = html`
   <svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet">
-    <path d="${arcPath(50, 53, 44, START_ANGLE, START_ANGLE + SWEEP)}"
+    <path d="${raw(arcPath(50, 53, 44, START_ANGLE, START_ANGLE + SWEEP))}"
           class="track"/>
-    <path d="${arcPath(50, 53, 44, START_ANGLE, needleDeg)}" class="fill"/>
-    <line x1="50" y1="53" x2="${nx.toFixed(2)}" y2="${ny.toFixed(2)}" class="needle"/>
+    <path d="${raw(arcPath(50, 53, 44, START_ANGLE, needleDeg))}" class="fill"/>
+    <line x1="50" y1="53" x2="${raw(nx.toFixed(2))}" y2="${raw(ny.toFixed(2))}" class="needle"/>
     <circle cx="50" cy="53" r="3.2" class="hub"/>
-    <text x="50" y="48" class="value">${formatValue(display, decimals)}</text>
+    <text x="50" y="48" class="value">${raw(formatValue(display, decimals))}</text>
     <text x="50" y="62" class="units">${units}</text>
     <text x="50" y="97" class="label">${label}</text>
-    <text x="${polar(50, 53, 48, START_ANGLE)[0].toFixed(0)}" y="86" class="bound">${min}</text>
-    <text x="${polar(50, 53, 48, START_ANGLE + SWEEP)[0].toFixed(0)}" y="86" class="bound">${max}</text>
+    <text x="${raw(polar(50, 53, 48, START_ANGLE)[0].toFixed(0))}" y="86" class="bound">${raw(String(min))}</text>
+    <text x="${raw(polar(50, 53, 48, START_ANGLE + SWEEP)[0].toFixed(0))}" y="86" class="bound">${raw(String(max))}</text>
   </svg>`
 }
 

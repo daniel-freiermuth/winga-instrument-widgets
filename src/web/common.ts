@@ -19,6 +19,40 @@ export {
 
 export type { ExtensionClient }
 
+// ─── Safe HTML templating ─────────────────────────────────────────────────────
+//
+// `html` is a tagged template literal that auto-escapes every interpolated
+// value, so injection safety is the default and cannot be forgotten.
+//
+// Wrap a value in `raw()` to opt out — only for strings you have already built
+// safely (SVG path data, pre-joined option lists, etc.).
+//
+//   root.innerHTML = html`<text>${label}</text>`         ← auto-escaped
+//   root.innerHTML = html`<path d="${raw(arcPath(…))}"/>`← trusted numeric output
+
+/** Sentinel for pre-trusted HTML fragments passed to the `html` tag. */
+class SafeHtml {
+  constructor(readonly value: string) {}
+}
+
+/** Mark a string as already-safe so the `html` tag won't escape it. */
+export function raw(s: string): SafeHtml { return new SafeHtml(s) }
+
+/** Tagged template that HTML-escapes every interpolated value by default. */
+export function html(strings: TemplateStringsArray, ...values: unknown[]): string {
+  let out = ''
+  for (let i = 0; i < strings.length; i++) {
+    out += strings[i] ?? ''
+    if (i < values.length) {
+      const v = values[i]
+      out += v instanceof SafeHtml
+        ? v.value
+        : String(v).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c] ?? c)
+    }
+  }
+  return out
+}
+
 /** Per-instance widget configuration as persisted in state storage. */
 export interface InstrumentConfig {
   path?: string | undefined
