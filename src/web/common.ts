@@ -81,36 +81,11 @@ export interface UpdateArgs {
 /** Returned by `startInstrument` once the host handshake completes. */
 export interface InstrumentHandle {
   client: ExtensionClient
-  /** Returns true when the most recent pointer sequence was a long press. */
-  longPressFired: () => boolean
 }
 
 export function formatValue(value: unknown, decimals = 1): string {
   if (typeof value !== 'number' || !isFinite(value)) return '--'
   return value.toFixed(decimals)
-}
-
-const LONG_PRESS_MS = 1500
-
-function installLongPress(client: ExtensionClient): () => boolean {
-  let timer: ReturnType<typeof setTimeout> | undefined
-  let fired = false
-  const start = (): void => {
-    fired = false
-    timer = setTimeout(() => {
-      fired = true
-      client.call('ui.openConfigPanel').catch(() => {})
-    }, LONG_PRESS_MS)
-  }
-  const cancel = (): void => {
-    clearTimeout(timer)
-    timer = undefined
-  }
-  window.addEventListener('pointerdown', start)
-  window.addEventListener('pointerup', cancel)
-  window.addEventListener('pointercancel', cancel)
-  window.addEventListener('pointerleave', cancel)
-  return (): boolean => fired
 }
 
 /**
@@ -157,7 +132,6 @@ export async function startInstrument({
   onUpdate: (args: UpdateArgs) => void
 }): Promise<InstrumentHandle> {
   const client = await connectExtension()
-  const longPressFired = installLongPress(client)
   const prefs = await fetchPrefs(client)
 
   // config is typed as InstrumentConfig; state storage may include extra keys
@@ -197,5 +171,5 @@ export async function startInstrument({
     applyConfig().catch((err: unknown) => console.warn('config reload failed', err))
   })
   await applyConfig()
-  return { client, longPressFired }
+  return { client }
 }
