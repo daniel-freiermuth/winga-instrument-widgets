@@ -5,6 +5,16 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-07-18
+
+### Changed
+
+- Long-press gesture no longer opens the configuration panel from inside the widget — the host chartplotter is responsible for that.
+
+### Fixed
+
+- Path-selection control in the configuration panel replaced with a dropdown so that available paths are visible and selectable on mobile devices.
+
 ## [0.2.0] - 2026-07-18
 
 ### Added
