@@ -10,6 +10,7 @@ import {
   resolveDisplay,
   formatDuration,
   formatTimestamp,
+  formatDistance,
   USE_DEFAULT
 } from '../src/web/units.ts'
 
@@ -227,4 +228,25 @@ test('formatTimestamp: 10+ days away shows date string', () => {
 
 test('formatTimestamp: unparseable input is returned verbatim', () => {
   assert.strictEqual(formatTimestamp('not-a-date', REF), 'not-a-date')
+})
+
+// ─── formatDistance ───────────────────────────────────────────────────────────
+
+test('formatDistance: below 0.5 nm shows whole metres', () => {
+  assert.strictEqual(formatDistance(0), '0 m')
+  assert.strictEqual(formatDistance(100), '100 m')
+  // 0.5 nm = 926 m exactly — at threshold, shows nm.
+  assert.strictEqual(formatDistance(925), '925 m')
+})
+
+test('formatDistance: at and above 0.5 nm shows one-decimal nm', () => {
+  assert.strictEqual(formatDistance(926), '0.5 nm')   // 926 / 1852 = 0.4999… → rounds to 0.5
+  assert.strictEqual(formatDistance(1852), '1.0 nm')
+  assert.strictEqual(formatDistance(18520), '10.0 nm')
+  assert.strictEqual(formatDistance(23150), '12.5 nm')
+})
+
+test('formatDistance: non-finite returns placeholder', () => {
+  assert.strictEqual(formatDistance(Infinity), '--')
+  assert.strictEqual(formatDistance(NaN), '--')
 })

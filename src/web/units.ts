@@ -88,7 +88,8 @@ export const CONVERSIONS: Record<string, ConversionDef> = {
   // `fn` is an identity no-op; display.ts intercepts these keys before calling
   // convert() so this fn is never invoked in normal operation.
   'iso8601': { label: 'Time of day / date', units: '', fn: (v) => v },
-  's-duration': { label: 'Duration', units: '', fn: (v) => v }
+  's-duration': { label: 'Duration', units: '', fn: (v) => v },
+  'm-nm-auto': { label: 'Distance (auto: m or nm)', units: '', fn: (v) => v }
 }
 
 export function convert(value: unknown, conversionKey: string): unknown {
@@ -106,7 +107,7 @@ export const VALID_BY_UNIT: Record<string, string[]> = {
   K: ['none', 'k-c', 'k-f'],
   rad: ['none', 'rad-deg'],
   ratio: ['none', 'ratio-pct'],
-  m: ['none', 'm-ft', 'm-nm', 'm-km'],
+  m: ['none', 'm-ft', 'm-nm', 'm-km', 'm-nm-auto'],
   Pa: ['none', 'pa-hpa'],
   s: ['none', 's-duration'],
   // Signal K publishes timestamp meta.units as one of these strings.
@@ -446,4 +447,18 @@ export function formatTimestamp(iso: string, now = Date.now()): string {
       ? { month: 'short', day: 'numeric' }
       : { month: 'short', day: 'numeric', year: 'numeric' }
   return d.toLocaleDateString(undefined, opts)
+}
+
+const NM_IN_M = 1852
+
+/**
+ * Format a distance (metres) adaptively for nautical display.
+ *
+ *  ≥ 0.5 nm  →  "2.3 nm"   (one decimal place)
+ *  < 0.5 nm  →  "452 m"    (whole metres)
+ */
+export function formatDistance(metres: number): string {
+  if (!isFinite(metres)) return '--'
+  const nm = metres / NM_IN_M
+  return nm >= 0.5 ? `${nm.toFixed(1)} nm` : `${Math.round(metres)} m`
 }

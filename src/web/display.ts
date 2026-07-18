@@ -7,6 +7,7 @@ import {
   resolveDisplay,
   USE_DEFAULT,
   formatValue,
+  formatDistance,
   formatDuration,
   formatTimestamp,
   html,
@@ -32,6 +33,12 @@ function render({ config, value, meta, prefs }: UpdateArgs): void {
     // Seconds number → human-readable duration.
     text = (value == null) ? '--'
       : typeof value === 'number' ? formatDuration(value)
+      : '--'
+    units = config.units ?? ''
+  } else if (key === 'm-nm-auto') {
+    // Metres → "452 m" below 0.5 nm, "2.3 nm" above.
+    text = (value == null) ? '--'
+      : typeof value === 'number' ? formatDistance(value)
       : '--'
     units = config.units ?? ''
   } else {
