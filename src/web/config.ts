@@ -28,6 +28,79 @@ const WIDGET_FIELDS: Record<string, WidgetSpec> = {
   }
 }
 
+interface KnownPath {
+  readonly path: string
+  /** Label shown in the datalist dropdown. */
+  readonly label: string
+  /** SK meta units — pre-seeded into unitsByPath so conversion selection works
+   *  even before the server publishes the path. */
+  readonly units: string
+  /** Widget types that should see this path in their suggestion list. */
+  readonly widgets: readonly string[]
+}
+
+/**
+ * Well-known Signal K paths, always shown in the config datalist regardless of
+ * whether the server has published them yet.  Paths sourced from the SK
+ * course-provider-plugin (`navigation.course.calcValues.*`).
+ */
+const KNOWN_PATHS: readonly KnownPath[] = [
+  {
+    path: 'navigation.speedOverGround',
+    label: 'SOG – Speed over ground',
+    units: 'm/s',
+    widgets: ['gauge', 'meter', 'display']
+  },
+  {
+    path: 'navigation.courseOverGroundTrue',
+    label: 'COG – Course over ground (true)',
+    units: 'rad',
+    widgets: ['display']
+  },
+  {
+    path: 'navigation.course.calcValues.bearingTrue',
+    label: 'BTW – Bearing to next waypoint (true)',
+    units: 'rad',
+    widgets: ['display']
+  },
+  {
+    path: 'navigation.course.calcValues.distance',
+    label: 'DTG – Distance to next waypoint',
+    units: 'm',
+    widgets: ['gauge', 'display']
+  },
+  {
+    path: 'navigation.course.calcValues.route.distance',
+    label: 'DTG – Distance to route end',
+    units: 'm',
+    widgets: ['gauge', 'display']
+  },
+  {
+    path: 'navigation.course.calcValues.estimatedTimeOfArrival',
+    label: 'ETA – Next waypoint',
+    units: 'RFC 2822',
+    widgets: ['display']
+  },
+  {
+    path: 'navigation.course.calcValues.route.estimatedTimeOfArrival',
+    label: 'ETA – Route end',
+    units: 'RFC 2822',
+    widgets: ['display']
+  },
+  {
+    path: 'navigation.course.calcValues.timeToGo',
+    label: 'TTG – Time to next waypoint',
+    units: 's',
+    widgets: ['display']
+  },
+  {
+    path: 'navigation.course.calcValues.route.timeToGo',
+    label: 'TTG – Time to route end',
+    units: 's',
+    widgets: ['display']
+  }
+]
+
 /** Runtime check that `v` is a non-null object (required before property access). */
 function isRecord(v: unknown): v is Record<string, unknown> {
   return typeof v === 'object' && v !== null
@@ -97,15 +170,22 @@ function fieldRow(label: string, control: string): string {
 function buildForm(
   widgetType: string,
   paths: string[],
+  labelByPath: Record<string, string>,
   state: InstrumentConfig
 ): string {
   const spec = WIDGET_FIELDS[widgetType] ?? WIDGET_FIELDS['gauge']!
   const rows: string[] = []
+  const opts = paths.map((p) => {
+    const label = labelByPath[p]
+    return label
+      ? html`<option value="${p}" label="${label}">`
+      : html`<option value="${p}">`
+  }).join('')
   rows.push(
     fieldRow(
       'Signal K path',
       html`<input id="path" list="paths" value="${state.path ?? ''}" placeholder="Type to search...">
-       <datalist id="paths">${raw(paths.map((p) => html`<option value="${p}">`).join(''))}</datalist>`
+       <datalist id="paths">${raw(opts)}</datalist>`
     )
   )
   if (spec.fields.includes('label')) {
@@ -205,6 +285,21 @@ async function main(): Promise<void> {
     ),
     client.state.get()
   ])
+
+  // Merge well-known paths for this widget type.
+  // Known paths go first (labelled, in declaration order); server paths that
+  // are already in the known list are deduplicated.  Known-path units are
+  // pre-seeded so the conversion selector works correctly even for paths not
+  // yet published by the server (e.g. ETA paths that are ISO 8601 strings).
+  const knownForWidget = KNOWN_PATHS.filter((kp) => kp.widgets.includes(widgetType))
+  const labelByPath: Record<string, string> = {}
+  for (const kp of knownForWidget) {
+    labelByPath[kp.path] = kp.label
+    unitsByPath[kp.path] ??= kp.units
+  }
+  const knownPaths = knownForWidget.map((kp) => kp.path)
+  const allPaths = [...knownPaths, ...paths.filter((p) => !(p in labelByPath))]
+
   // Narrow persisted keys to the typed InstrumentConfig fields.
   // We wrote these values ourselves via readForm, so the shapes are known.
   const state: InstrumentConfig = {
@@ -221,7 +316,7 @@ async function main(): Promise<void> {
 
   root.innerHTML = html`
     <h2>Configure ${widgetType}</h2>
-    <form id="form">${raw(buildForm(widgetType, paths, state))}</form>
+    <form id="form">${raw(buildForm(widgetType, allPaths, labelByPath, state))}</form>
     <p class="status" id="status"></p>
     <div class="actions">
       <button type="button" id="cancel">Cancel</button>
