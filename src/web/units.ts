@@ -158,22 +158,154 @@ export function defaultConversion(
   }
 }
 
-// Compiled `meta.displayUnits.formula` expressions, cached by formula string.
-// A formula is a server-provided expression in `value`, e.g. "value * 1.94384".
+// ─── Formula evaluation ──────────────────────────────────────────────────────
+//
+// Signal K servers publish a `meta.displayUnits.formula` string per path when
+// the user has configured unit preferences.  Example response for SOG with the
+// "Nautical" preset:
+//
+//   { "units": "m/s", "displayUnits": { "targetUnit": "kn",
+//     "formula": "value * 1.94384", "symbol": "kn" } }
+//
+// The formulas are Math.js expressions, but in practice every SK conversion is
+// linear: f(value) = a·value + b.  Examples:
+//   "value * 1.94384"              m/s  → kn
+//   "(value - 273.15) * 1.8 + 32" K    → °F
+//   "value / 1852"                 m    → nm
+//
+// Library alternatives assessed (as of 2025-07):
+//
+//   mathjs          — the spec-correct choice (SK explicitly says "Math.js
+//                     expressions"), actively maintained, full-featured.
+//                     REJECTED: ~500 KB bundle, completely unacceptable for
+//                     widget iframes.  Would be the right pick if formulas
+//                     ever become non-linear or use math functions (sin, log…).
+//
+//   expr-eval       — lightweight (~15 KB), safe parser, good API.
+//                     REJECTED: last published 2019, effectively abandoned;
+//                     no native TypeScript source (only a hand-written .d.ts).
+//
+//   math-expression-  — has native TypeScript, small, token-based postfix
+//   evaluator           evaluation.
+//                     REJECTED: niche project with low activity; unclear
+//                     long-term maintenance.
+//
+//   expressionparser — tiny, zero dependencies, published April 2025.
+//                     REJECTED: more complexity than the problem warrants for
+//                     our strictly linear subset.
+//
+// Hand-rolled evalArith wins here: the grammar is tiny and well-defined, and
+// enforcing linearity as an explicit invariant adds safety no library gives us.
+//
+// Strategy:
+//  1. Whitelist — after substituting 'value', only digit/operator chars allowed.
+//  2. evalArith — a ~40-line recursive descent parser for pure arithmetic.
+//  3. Probe at x=0 and x=1 to extract the linear coefficients a and b.
+//  4. Spot-check at x=7 to confirm the formula is actually linear.
+//  5. Cache the resulting closure (value: number) => a*value + b.
+
 type FormulaFn = (value: number) => number
 const formulaCache = new Map<string, FormulaFn | null>()
 
+/**
+ * Evaluate a pure arithmetic expression string (no variable names, no calls).
+ * Grammar: expr = term (('+' | '-') term)*
+ *          term = atom (('*' | '/') atom)*
+ *          atom = '(' expr ')' | '-' atom | number
+ * Returns NaN on any parse error so callers never need a try/catch.
+ */
+function evalArith(expr: string): number {
+  let pos = 0
+  const ws = (): void => { while (expr[pos] === ' ') pos++ }
+  const at = (): string => expr[pos] ?? ''
+
+  // Addition and subtraction — lowest precedence.
+  function parseExpr(): number {
+    let v = parseTerm(); ws()
+    while (at() === '+' || at() === '-') {
+      const op = expr[pos++]!; ws()
+      v = op === '+' ? v + parseTerm() : v - parseTerm(); ws()
+    }
+    return v
+  }
+
+  // Multiplication and division — higher precedence than +/-.
+  function parseTerm(): number {
+    let v = parseAtom(); ws()
+    while (at() === '*' || at() === '/') {
+      const op = expr[pos++]!; ws()
+      v = op === '*' ? v * parseAtom() : v / parseAtom(); ws()
+    }
+    return v
+  }
+
+  // Parenthesised sub-expression, unary minus, or numeric literal
+  // (integers, decimals, and scientific notation such as 1.8e3).
+  function parseAtom(): number {
+    ws()
+    if (at() === '(') { pos++; const v = parseExpr(); ws(); if (at() === ')') pos++; return v }
+    if (at() === '-') { pos++; return -parseAtom() }
+    const start = pos
+    while (/[\d.]/.test(at())) pos++
+    if ((at() === 'e' || at() === 'E') && pos > start) {
+      pos++; if (at() === '+' || at() === '-') pos++
+      while (/\d/.test(at())) pos++
+    }
+    if (pos === start) return NaN   // nothing was consumed → syntax error
+    return parseFloat(expr.slice(start, pos))
+  }
+
+  ws()
+  const result = parseExpr()
+  ws()
+  // If pos didn't reach the end, there were unconsumed characters → error.
+  return pos === expr.length ? result : NaN
+}
+
+/**
+ * Compile a Signal K display formula into a cached linear closure.
+ *
+ * Because all SK formulas are linear (a·value + b) we can extract the
+ * coefficients algebraically using two evaluations:
+ *   b     = formula(0)          ← the intercept
+ *   a + b = formula(1)          ← slope + intercept
+ *   a     = formula(1) - formula(0)
+ *
+ * A spot-check at x=7 guards against any non-linear formula that somehow
+ * slips through — if it's not linear, we refuse to cache and return null.
+ *
+ * Returns null for anything that fails the safety whitelist, doesn't parse,
+ * or turns out not to be linear.
+ */
 function compileFormula(formula: string): FormulaFn | null {
   if (formulaCache.has(formula)) return formulaCache.get(formula) ?? null
-  try {
-    // eslint-disable-next-line @typescript-eslint/no-implied-eval -- intentional: server-provided formula evaluation
-    const fn = new Function('value', `"use strict"; return (${formula});`) as FormulaFn
-    formulaCache.set(formula, fn)
-    return fn
-  } catch {
+
+  // Safety whitelist: after substituting 'value' with a number, the remaining
+  // string must consist solely of digits, decimal points, arithmetic operators,
+  // parentheses, and scientific-notation markers (e/E).  Any letter that isn't
+  // part of 'value' (e.g. a function name like "sin") rejects the formula.
+  const safe = formula.replace(/\bvalue\b/g, '(0)')
+  if (!/^[0-9\s.+\-*/()eE]+$/.test(safe)) {
     formulaCache.set(formula, null)
     return null
   }
+
+  // Substitute helper: replace 'value' and evaluate the resulting expression.
+  const sub = (x: number): number =>
+    evalArith(formula.replace(/\bvalue\b/g, `(${x})`))
+
+  // Extract linear coefficients.
+  const b   = sub(0)
+  const apb = sub(1)
+  if (!isFinite(b) || !isFinite(apb)) { formulaCache.set(formula, null); return null }
+  const a = apb - b
+
+  // Linearity check: a·7 + b must equal formula(7) within floating-point noise.
+  if (Math.abs(sub(7) - (7 * a + b)) > 1e-9) { formulaCache.set(formula, null); return null }
+
+  const fn: FormulaFn = (value: number) => a * value + b
+  formulaCache.set(formula, fn)
+  return fn
 }
 
 /** Apply a server `displayUnits.formula` to a value. Returns the value
@@ -182,12 +314,8 @@ export function applyFormula(value: unknown, formula: string): unknown {
   if (typeof value !== 'number' || !isFinite(value)) return value
   const fn = compileFormula(formula)
   if (!fn) return value
-  try {
-    const out = fn(value)
-    return typeof out === 'number' && isFinite(out) ? out : value
-  } catch {
-    return value
-  }
+  const out = fn(value)
+  return isFinite(out) ? out : value
 }
 
 /**
