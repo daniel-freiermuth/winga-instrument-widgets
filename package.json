@@ -1,6 +1,6 @@
 {
   "name": "winga-instrument-widgets",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Gauge, meter and switch widgets for Signal K chartplotters that support the plotterExtensions resource type",
   "main": "dist/plugin/index.js",
   "exports": {
@@ -57,8 +57,7 @@
   },
   "signalk-plugin-enabled-by-default": false,
   "signalk": {
-    "appIcon": "public/assets/instrument-widgets.png",
-    "displayName": "Instrument Widgets",
+    "displayName": "Winga Instrument Widgets",
     "appSupport": "none",
     "screenshots": [
       "./docs/screenshots/1_freeboard-widget.png"

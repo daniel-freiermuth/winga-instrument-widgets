@@ -86,11 +86,11 @@ function webAssets() {
 
       writeFileSync(join(pub, 'index.html'), `<!doctype html>
 <html lang="en">
-<head><meta charset="utf-8"><title>Instrument Widgets</title>
+<head><meta charset="utf-8"><title>Winga Instrument Widgets</title>
 <link rel="stylesheet" href="instruments.css"></head>
 <body class="panel">
 <div id="root">
-<h2>Instrument Widgets</h2>
+<h2>Winga Instrument Widgets</h2>
 <p class="status">This package provides gauge, meter, switch and display
 widgets for chartplotters that support the Signal K
 <code>plotterExtensions</code> resource type (e.g. Freeboard-SK). There is

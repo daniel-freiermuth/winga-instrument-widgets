@@ -61,7 +61,7 @@ export interface SkApp {
 
 function buildManifest(): Record<string, unknown> {
   return {
-    name: 'Instrument Widgets',
+    name: 'Winga Instrument Widgets',
     description:
       'Single-value instrument widgets: gauge, percent meter and switch.',
     version: pkg.version,
@@ -211,7 +211,7 @@ export default function plugin(app: SkApp): Plugin {
 
   return {
     id: PLUGIN_ID,
-    name: 'Instrument Widgets',
+    name: 'Winga Instrument Widgets',
     description:
       'Gauge, meter and switch widgets for chartplotters that support the plotterExtensions resource type.',
 
