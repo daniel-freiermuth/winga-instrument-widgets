@@ -34,7 +34,7 @@ plugin/     Plugin entry (CommonJS) run by the Signal K server: registers
             switch PUT handler. Deliberately tiny — all UI lives in iframes.
 src/web/    Widget/panel browser source (plain JS modules + CSS).
             common.js is the shared runtime: host connection, config
-            loading, value conversion, long-press gesture.
+            loading, and value conversion.
 scripts/    build.mjs — esbuild bundles src/web -> public/ and generates
             the HTML pages.
 public/     Built web assets, committed. Served by the plugin as a top-level
@@ -82,11 +82,7 @@ the built-in demo switch path covers the switch widget anywhere.
   translucent-dark visual treatment that works over light and dark charts,
   and never navigate, open windows, or block the UI thread.
 - **Interaction model:** glanceable display + one tap action at most
-  (switch toggle). Anything richer belongs in the configuration panel. The
-  press-and-hold gesture is detected inside the widget (hosts cannot see
-  pointer events inside an iframe) and calls the host method
-  `ui.openConfigPanel` — keep that behavior in `common.js` so every widget
-  inherits it.
+  (switch toggle). Anything richer belongs in the configuration panel.
 - All host communication goes through the bus client. The one sanctioned
   exception is the configuration panel fetching the Signal K data tree
   directly over same-origin REST to enumerate candidate paths.

@@ -1,8 +1,5 @@
 // Shared runtime for instrument widgets: host connection, per-instance
-// configuration, Signal K value subscription, unit conversion, and the
-// press-and-hold gesture that asks the host to open the configuration panel.
-// (Pointer events inside a sandboxed iframe are invisible to the host, so the
-// gesture is detected here and delivered via the ui.openConfigPanel method.)
+// configuration, Signal K value subscription, and unit conversion.
 
 import { connectExtension, type ExtensionClient } from 'signalk-plotterext-bus/extension'
 import type { SkMeta, UnitPrefs } from './units'

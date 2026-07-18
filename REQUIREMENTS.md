@@ -40,8 +40,6 @@ Common (implemented once in the shared runtime):
 - Subscribe to the configured Signal K path via `signalk.subscribe`; render
   on every value event.
 - Re-load configuration and re-subscribe on `state.changed`.
-- Detect press-and-hold (~600 ms) and call `ui.openConfigPanel`. A short
-  tap must still work as a tap (the switch uses this).
 - Unconfigured state renders "Not configured" plus placeholder value —
   never a blank or broken frame. Host-connection failure renders a visible
   error message.
@@ -56,8 +54,7 @@ Per widget:
 - **Meter**: horizontal 0–100% bar; default conversion `ratio -> %` (Signal K
   ratio paths are 0..1); value clamped to 0–100.
 - **Switch**: ON/OFF pill display for boolean or 0/1 paths; tap actuates
-  via `signalk.put` with the inverted value (1/0); a tap that was actually
-  a long press must not actuate; no actuation attempt when the host lacks
+  via `signalk.put` with the inverted value (1/0); no actuation attempt when the host lacks
   the `signalk.put` capability or no path is configured.
 - **Display Value**: three center-justified rows — optional small top
   label, the live value in the largest text (with converted units), and an
