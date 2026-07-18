@@ -14,6 +14,8 @@ export {
   USE_DEFAULT,
   convert,
   conversionUnits,
+  formatDuration,
+  formatTimestamp,
   resolveDisplay
 } from './units'
 

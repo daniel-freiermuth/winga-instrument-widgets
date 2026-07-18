@@ -83,7 +83,12 @@ export const CONVERSIONS: Record<string, ConversionDef> = {
   'm-ft': { label: 'm → ft', units: 'ft', fn: (v) => v * 3.28084 },
   'm-nm': { label: 'm → nm', units: 'nm', fn: (v) => v / 1852 },
   'm-km': { label: 'm → km', units: 'km', fn: (v) => v / 1000 },
-  'pa-hpa': { label: 'Pa → hPa', units: 'hPa', fn: (v) => v / 100 }
+  'pa-hpa': { label: 'Pa → hPa', units: 'hPa', fn: (v) => v / 100 },
+  // Display-only formatters for the Display widget.
+  // `fn` is an identity no-op; display.ts intercepts these keys before calling
+  // convert() so this fn is never invoked in normal operation.
+  'iso8601': { label: 'Time of day / date', units: '', fn: (v) => v },
+  's-duration': { label: 'Duration', units: '', fn: (v) => v }
 }
 
 export function convert(value: unknown, conversionKey: string): unknown {
@@ -102,7 +107,11 @@ export const VALID_BY_UNIT: Record<string, string[]> = {
   rad: ['none', 'rad-deg'],
   ratio: ['none', 'ratio-pct'],
   m: ['none', 'm-ft', 'm-nm', 'm-km'],
-  Pa: ['none', 'pa-hpa']
+  Pa: ['none', 'pa-hpa'],
+  s: ['none', 's-duration'],
+  // Signal K publishes timestamp meta.units as one of these strings.
+  'RFC 2822': ['iso8601'],
+  'ISO 8601': ['iso8601']
 }
 
 /**
@@ -349,4 +358,92 @@ export function resolveDisplay({
   let fk = defaultConversion(meta?.units, path, prefs)
   if (fk === 'none' && CONVERSIONS[fallback]) fk = fallback
   return { value: convert(value, fk), symbol: (CONVERSIONS[fk] ?? NONE_CONV).units }
+}
+
+// ─── Time formatters ─────────────────────────────────────────────────────────
+//
+// Used exclusively by the Display widget (display.ts) for the 'iso8601' and
+// 's-duration' conversion keys.  Pure functions with no DOM or bus dependency,
+// kept here so they can be unit-tested alongside the rest of units.ts.
+
+/** Pad a non-negative integer to at least two digits. */
+const p2 = (n: number) => n.toString().padStart(2, '0')
+
+/**
+ * Format a duration (seconds, possibly negative) as a compact string.
+ *
+ *  |s| <  1 h  →  MM:SS.S    (one decimal second)
+ *  |s| < 24 h  →  HH:MM:SS
+ *  |s| < 10 d  →  Nd HH:MM   (N = 1–9)
+ *  |s| ≥ 10 d  →  Nd HHh
+ *
+ * Negative values get a leading '−' (e.g. countdown that has elapsed).
+ */
+export function formatDuration(seconds: number): string {
+  if (!isFinite(seconds)) return '--'
+  const neg = seconds < 0
+  const s = Math.abs(seconds)
+  const prefix = neg ? '-' : ''
+
+  if (s < 3600) {
+    const m = Math.floor(s / 60)
+    // Floor to one decimal place to prevent the boundary "60.0" from floating-
+    // point representation of values like 3599.99.
+    const sec = Math.floor((s % 60) * 10) / 10
+    return `${prefix}${p2(m)}:${sec.toFixed(1).padStart(4, '0')}`
+  }
+  if (s < 86400) {
+    const h = Math.floor(s / 3600)
+    const m = Math.floor((s % 3600) / 60)
+    const sec = Math.floor(s % 60)
+    return `${prefix}${p2(h)}:${p2(m)}:${p2(sec)}`
+  }
+  if (s < 864000) {
+    const n = Math.floor(s / 86400)
+    const rem = s % 86400
+    const h = Math.floor(rem / 3600)
+    const m = Math.floor((rem % 3600) / 60)
+    return `${prefix}${n}d ${p2(h)}:${p2(m)}`
+  }
+  const n = Math.floor(s / 86400)
+  const h = Math.floor((s % 86400) / 3600)
+  return `${prefix}${n}d ${h}h`
+}
+
+/**
+ * Format an ISO 8601 timestamp string as a compact local-time display.
+ * The optional `now` argument (ms since epoch) is exposed for unit testing.
+ *
+ *  |Δ| <  1 d  →  HH:MM:SS            (browser local time zone)
+ *  |Δ| < 10 d  →  HH:MM+Nd / HH:MM-Nd (future / past; N = 1–9)
+ *  |Δ| ≥ 10 d  →  localised date (e.g. "Jul 28" or "Jul 28, 2027")
+ *
+ * Unparseable input is returned verbatim.
+ */
+export function formatTimestamp(iso: string, now = Date.now()): string {
+  const d = new Date(iso)
+  if (!isFinite(d.getTime())) return iso
+
+  const delta = d.getTime() - now        // positive = future
+  const absDays = Math.abs(delta) / 86400000
+
+  const hh = p2(d.getHours())
+  const mm = p2(d.getMinutes())
+  const ss = p2(d.getSeconds())
+
+  if (absDays < 1) {
+    return `${hh}:${mm}:${ss}`
+  }
+  if (absDays < 10) {
+    const n = Math.floor(absDays)
+    const sign = delta >= 0 ? '+' : '-'
+    return `${hh}:${mm}${sign}${n}d`
+  }
+  // 10+ days: date only.
+  const nowDate = new Date(now)
+  const opts: Intl.DateTimeFormatOptions =
+    d.getFullYear() === nowDate.getFullYear()
+      ? { month: 'short', day: 'numeric' }
+      : { month: 'short', day: 'numeric', year: 'numeric' }
+  return d.toLocaleDateString(undefined, opts)
 }

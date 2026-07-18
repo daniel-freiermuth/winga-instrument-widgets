@@ -7,6 +7,8 @@ import {
   resolveDisplay,
   USE_DEFAULT,
   formatValue,
+  formatDuration,
+  formatTimestamp,
   html,
   raw
 } from './common'
@@ -15,21 +17,39 @@ import type { UpdateArgs } from './common'
 function render({ config, value, meta, prefs }: UpdateArgs): void {
   const root = document.getElementById('root')
   if (!root) return
-  const { value: display, symbol } = resolveDisplay({
-    value,
-    convert: config.convert,
-    meta,
-    prefs,
-    path: config.path
-  })
-  const units = config.units ?? symbol
+
+  const key = config.convert ?? USE_DEFAULT
   let text: string
-  if (value === undefined || value === null) {
-    text = '--'
-  } else if (typeof display === 'number') {
-    text = formatValue(display, config.decimals ?? 1)
+  let units: string
+
+  if (key === 'iso8601') {
+    // ISO 8601 timestamp string → compact local-time display.
+    text = (value == null) ? '--'
+      : typeof value === 'string' ? formatTimestamp(value)
+      : '--'
+    units = config.units ?? ''
+  } else if (key === 's-duration') {
+    // Seconds number → human-readable duration.
+    text = (value == null) ? '--'
+      : typeof value === 'number' ? formatDuration(value)
+      : '--'
+    units = config.units ?? ''
   } else {
-    text = String(display)
+    const { value: display, symbol } = resolveDisplay({
+      value,
+      convert: config.convert,
+      meta,
+      prefs,
+      path: config.path
+    })
+    units = config.units ?? symbol
+    if (value === undefined || value === null) {
+      text = '--'
+    } else if (typeof display === 'number') {
+      text = formatValue(display, config.decimals ?? 1)
+    } else {
+      text = String(display)
+    }
   }
   const configured = !!config.path
   const rows: string[] = []

@@ -8,6 +8,8 @@ import {
   defaultConversion,
   applyFormula,
   resolveDisplay,
+  formatDuration,
+  formatTimestamp,
   USE_DEFAULT
 } from '../src/web/units.ts'
 
@@ -145,4 +147,84 @@ test('resolveDisplay: no meta and no fallback yields the raw value', () => {
   const r = resolveDisplay({ value: 42, convert: USE_DEFAULT, meta: undefined })
   assert.strictEqual(r.value, 42)
   assert.strictEqual(r.symbol, '')
+})
+
+// ─── formatDuration ───────────────────────────────────────────────────────────
+
+test('formatDuration: sub-hour shows MM:SS.S', () => {
+  assert.strictEqual(formatDuration(0), '00:00.0')
+  assert.strictEqual(formatDuration(65.7), '01:05.7')
+  // boundary: just under 1 h
+  assert.strictEqual(formatDuration(3599.9), '59:59.9')
+})
+
+test('formatDuration: MM:SS.S pads single-digit seconds', () => {
+  assert.strictEqual(formatDuration(61), '01:01.0')
+  assert.strictEqual(formatDuration(5.3), '00:05.3')
+})
+
+test('formatDuration: 1–24 h shows HH:MM:SS', () => {
+  assert.strictEqual(formatDuration(3600), '01:00:00')
+  assert.strictEqual(formatDuration(3661), '01:01:01')
+  // boundary: just under 24 h
+  assert.strictEqual(formatDuration(86399), '23:59:59')
+})
+
+test('formatDuration: 1–9 days shows Nd HH:MM', () => {
+  assert.strictEqual(formatDuration(86400), '1d 00:00')
+  assert.strictEqual(formatDuration(90061), '1d 01:01')
+  // boundary: just under 10 days
+  assert.strictEqual(formatDuration(863999), '9d 23:59')
+})
+
+test('formatDuration: 10+ days shows Nd HHh', () => {
+  assert.strictEqual(formatDuration(864000), '10d 0h')
+  assert.strictEqual(formatDuration(1317600), '15d 6h')  // 15 d 6 h exactly
+})
+
+test('formatDuration: negative values get a leading minus', () => {
+  assert.strictEqual(formatDuration(-65.7), '-01:05.7')
+  assert.strictEqual(formatDuration(-3661), '-01:01:01')
+  assert.strictEqual(formatDuration(-90061), '-1d 01:01')
+})
+
+test('formatDuration: non-finite input returns placeholder', () => {
+  assert.strictEqual(formatDuration(Infinity), '--')
+  assert.strictEqual(formatDuration(NaN), '--')
+})
+
+// ─── formatTimestamp ──────────────────────────────────────────────────────────
+// Tests use a fixed `now` so results are timezone-independent for format
+// structure checks.  Exact HH:MM:SS values depend on the local TZ and are
+// therefore only checked via regex.
+
+// Reference: 2024-07-18T00:00:00Z
+const REF = 1721260800000
+
+test('formatTimestamp: within 24 h shows HH:MM:SS', () => {
+  const ahead = new Date(REF + 3600000).toISOString()   // +1 h
+  const behind = new Date(REF - 3600000).toISOString()  // -1 h
+  assert.match(formatTimestamp(ahead, REF), /^\d{2}:\d{2}:\d{2}$/)
+  assert.match(formatTimestamp(behind, REF), /^\d{2}:\d{2}:\d{2}$/)
+})
+
+test('formatTimestamp: 1–9 days away shows HH:MM±Nd', () => {
+  const ahead = new Date(REF + 2 * 86400000).toISOString()   // +2 d
+  const behind = new Date(REF - 3 * 86400000).toISOString()  // -3 d
+  assert.match(formatTimestamp(ahead, REF), /^\d{2}:\d{2}\+\d+d$/)
+  assert.match(formatTimestamp(behind, REF), /^\d{2}:\d{2}-\d+d$/)
+  assert.ok(formatTimestamp(ahead, REF).endsWith('+2d'))
+  assert.ok(formatTimestamp(behind, REF).endsWith('-3d'))
+})
+
+test('formatTimestamp: 10+ days away shows date string', () => {
+  const ahead = new Date(REF + 11 * 86400000).toISOString()
+  const result = formatTimestamp(ahead, REF)
+  // A formatted date should not start with HH:MM pattern.
+  assert.ok(!/^\d{2}:\d{2}/.test(result), `expected date, got ${result}`)
+  assert.ok(result.length > 0)
+})
+
+test('formatTimestamp: unparseable input is returned verbatim', () => {
+  assert.strictEqual(formatTimestamp('not-a-date', REF), 'not-a-date')
 })
