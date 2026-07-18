@@ -5,11 +5,13 @@ import {
   resolveDisplay,
   USE_DEFAULT,
   formatValue
-} from './common.js'
+} from './common'
+import type { UpdateArgs } from './common'
 
-function render({ config, value, meta, prefs }) {
+function render({ config, value, meta, prefs }: UpdateArgs): void {
   const root = document.getElementById('root')
-  const label = config.label || config.path || 'Not configured'
+  if (!root) return
+  const label = config.label ?? config.path ?? 'Not configured'
   // A meter shows percent. "Use default" follows the server/host preference
   // (ratio paths convert 0..1 -> %); when nothing better is known it falls
   // back to ratio->%. An explicit conversion (e.g. 'none' for already-percent
@@ -39,7 +41,8 @@ function render({ config, value, meta, prefs }) {
 startInstrument({
   defaults: { convert: USE_DEFAULT, decimals: 0 },
   onUpdate: render
-}).catch((err) => {
-  document.getElementById('root').textContent = 'Host connection failed'
+}).catch((err: unknown) => {
+  const root = document.getElementById('root')
+  if (root) root.textContent = 'Host connection failed'
   console.error(err)
 })

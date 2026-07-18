@@ -1,4 +1,4 @@
-// Unit-aware conversion selection tests (pure logic in src/web/units.mjs).
+// Unit-aware conversion selection tests (pure logic in src/web/units.ts).
 
 import { test } from 'node:test'
 import assert from 'node:assert'
@@ -9,17 +9,17 @@ import {
   applyFormula,
   resolveDisplay,
   USE_DEFAULT
-} from '../src/web/units.mjs'
+} from '../src/web/units.ts'
 
-const near = (a, b, eps = 1e-4) =>
-  assert.ok(Math.abs(a - b) < eps, `${a} !~= ${b}`)
+const near = (a: unknown, b: number, eps = 1e-4): void =>
+  assert.ok(typeof a === 'number' && Math.abs(a - b) < eps, `${String(a)} !~= ${b}`)
 
 const ALL = ['none', 'ms-kn', 'k-c', 'rad-deg', 'ratio-pct', 'm-ft', 'pa-hpa']
 
 test('validConversions filters by SK meta units', () => {
   assert.deepStrictEqual(validConversions('m/s', ALL), VALID_BY_UNIT['m/s'])
-  assert.deepStrictEqual(validConversions('K', ALL), VALID_BY_UNIT.K)
-  assert.deepStrictEqual(validConversions('ratio', ALL), VALID_BY_UNIT.ratio)
+  assert.deepStrictEqual(validConversions('K', ALL), VALID_BY_UNIT['K'])
+  assert.deepStrictEqual(validConversions('ratio', ALL), VALID_BY_UNIT['ratio'])
 })
 
 test('unknown or missing units offer every conversion', () => {

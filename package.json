@@ -2,13 +2,13 @@
   "name": "signalk-instrument-widgets",
   "version": "0.5.2",
   "description": "Gauge, meter and switch widgets for Signal K chartplotters that support the plotterExtensions resource type",
-  "main": "plugin/index.js",
+  "main": "dist/plugin/index.js",
   "keywords": [
     "signalk-node-server-plugin",
     "signalk-category-chart-plotters"
   ],
   "files": [
-    "plugin",
+    "dist/plugin",
     "public",
     "docs/screenshots",
     "README.md",
@@ -16,9 +16,10 @@
     "LICENSE"
   ],
   "scripts": {
-    "build": "node scripts/build.mjs",
-    "test": "node --test \"test/**/*.test.js\" \"test/**/*.test.mjs\"",
-    "prepare": "node scripts/build.mjs"
+    "build": "node --import tsx/esm scripts/build.ts",
+    "test": "node --import tsx/esm --test test/manifest.test.ts test/units.test.ts",
+    "typecheck": "tsc --noEmit",
+    "prepare": "node --import tsx/esm scripts/build.ts"
   },
   "author": "Joel Kozikowski",
   "license": "MIT",
@@ -27,8 +28,12 @@
     "url": "git+https://github.com/joelkoz/signalk-instrument-widgets.git"
   },
   "devDependencies": {
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.0.0",
     "esbuild": "^0.27.0",
-    "signalk-plotterext-bus": "^0.5.0"
+    "signalk-plotterext-bus": "^0.10.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0"
   },
   "signalk-plugin-enabled-by-default": false,
   "signalk": {

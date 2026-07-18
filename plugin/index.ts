@@ -15,16 +15,56 @@
 // It is deliberately NOT a /plugins/* route: those are admin-gated, which
 // would break read-only users.
 
-const path = require('path')
+import { dirname, join } from 'node:path'
+import { fileURLToPath } from 'node:url'
+import pkg from '../package.json'
+
+// When esbuild compiles to CJS, import.meta becomes {} (url = undefined).
+// Fall back to the CJS __dirname global in that case.
+const _dirname: string =
+  typeof import.meta.url === 'string'
+    ? dirname(fileURLToPath(import.meta.url))
+    : __dirname
 
 const PLUGIN_ID = 'signalk-instrument-widgets'
 const ASSET_BASE = `/plotterext/${PLUGIN_ID}`
-const PUBLIC_DIR = path.join(__dirname, '..', 'public')
+const PUBLIC_DIR = join(_dirname, '..', 'public')
 const DEMO_SWITCH_PATH = 'electrical.switches.demo.state'
 
-const pkg = require('../package.json')
+// ── Signal K server interfaces ─────────────────────────────────────────────
 
-function buildManifest() {
+interface PutResult {
+  state: string
+  statusCode: number
+}
+
+type PutHandler = (context: string, path: string, value: unknown) => PutResult
+
+interface ResourceProviderMethods {
+  listResources: (query: unknown) => Promise<Record<string, unknown>>
+  getResource: (id: string, query?: unknown) => Promise<unknown>
+  setResource: (id: string, value: unknown) => Promise<void>
+  deleteResource: (id: string) => Promise<void>
+}
+
+interface ResourceProviderOptions {
+  type: string
+  methods: ResourceProviderMethods
+}
+
+/** Minimal surface of the Signal K server `app` object used by this plugin. */
+export interface SkApp {
+  debug(msg: string): void
+  error(msg: string): void
+  use?: (path: string, handler: unknown) => void
+  registerResourceProvider?: (opts: ResourceProviderOptions) => void
+  registerPutHandler?: (context: string, path: string, handler: PutHandler) => void
+  handleMessage(pluginId: string, delta: unknown): void
+}
+
+// ── Plugin manifest ────────────────────────────────────────────────────────
+
+function buildManifest(): Record<string, unknown> {
   return {
     name: 'Instrument Widgets',
     description:
@@ -83,33 +123,45 @@ function buildManifest() {
   }
 }
 
-module.exports = (app) => {
+// ── Plugin factory ─────────────────────────────────────────────────────────
+
+export interface Plugin {
+  id: string
+  name: string
+  description: string
+  schema: () => Record<string, unknown>
+  start: (options: Record<string, unknown>) => void
+  stop: () => void
+}
+
+export default function plugin(app: SkApp): Plugin {
   let providerRegistered = false
   let assetsMounted = false
   let demoSwitchState = 0
   let running = false
 
-  const debug = (msg) => app.debug(`${PLUGIN_ID}: ${msg}`)
+  const debug = (msg: string): void => app.debug(`${PLUGIN_ID}: ${msg}`)
 
   // Serve public/ as a top-level static route. Express is provided by the
   // Signal K server, so requiring it adds no runtime dependency of our own.
   // Guarded so the test harness (a fake app with no .use) is a no-op.
-  const mountAssets = () => {
+  // express is a runtime peer supplied by the Signal K server; not in our
+  // package.json, so static import is not possible.
+  const mountAssets = async (): Promise<void> => {
     if (assetsMounted) return
     if (typeof app.use !== 'function') return
-    let serveStatic
     try {
-      serveStatic = require('express').static
+      const { default: express } = await import('express')
+      app.use(ASSET_BASE, express.static(PUBLIC_DIR))
     } catch {
       app.error(`${PLUGIN_ID}: express unavailable; cannot serve ${ASSET_BASE}`)
       return
     }
-    app.use(ASSET_BASE, serveStatic(PUBLIC_DIR))
     assetsMounted = true
     debug(`assets served at ${ASSET_BASE}`)
   }
 
-  const registerProvider = () => {
+  const registerProvider = (): void => {
     if (providerRegistered) return
     if (typeof app.registerResourceProvider !== 'function') {
       app.error(`${PLUGIN_ID}: server has no resource provider registry`)
@@ -118,20 +170,20 @@ module.exports = (app) => {
     app.registerResourceProvider({
       type: 'plotterExtensions',
       methods: {
-        listResources: async () => {
+        listResources: async (): Promise<Record<string, unknown>> => {
           if (!running) return {}
           return { [PLUGIN_ID]: buildManifest() }
         },
-        getResource: async (id) => {
+        getResource: async (id: string): Promise<unknown> => {
           if (!running || id !== PLUGIN_ID) {
             throw new Error(`No such plotterExtensions resource: ${id}`)
           }
           return buildManifest()
         },
-        setResource: async () => {
+        setResource: async (): Promise<void> => {
           throw new Error(`${PLUGIN_ID} is a read-only provider`)
         },
-        deleteResource: async () => {
+        deleteResource: async (): Promise<void> => {
           throw new Error(`${PLUGIN_ID} is a read-only provider`)
         }
       }
@@ -139,7 +191,7 @@ module.exports = (app) => {
     providerRegistered = true
   }
 
-  const emitDemoSwitch = () => {
+  const emitDemoSwitch = (): void => {
     app.handleMessage(PLUGIN_ID, {
       updates: [
         {
@@ -149,11 +201,12 @@ module.exports = (app) => {
     })
   }
 
-  const startDemoSwitch = () => {
+  const startDemoSwitch = (): void => {
+    if (typeof app.registerPutHandler !== 'function') return
     app.registerPutHandler(
       'vessels.self',
       DEMO_SWITCH_PATH,
-      (_context, _path, value) => {
+      (_context: string, _path: string, value: unknown): PutResult => {
         demoSwitchState = value === true || value === 1 || value === '1' ? 1 : 0
         emitDemoSwitch()
         return { state: 'COMPLETED', statusCode: 200 }
@@ -169,7 +222,7 @@ module.exports = (app) => {
     description:
       'Gauge, meter and switch widgets for chartplotters that support the plotterExtensions resource type.',
 
-    schema: () => ({
+    schema: (): Record<string, unknown> => ({
       type: 'object',
       properties: {
         enableDemoSwitch: {
@@ -183,17 +236,17 @@ module.exports = (app) => {
       }
     }),
 
-    start(options) {
+    start(options: Record<string, unknown>): void {
       running = true
-      mountAssets()
+      void mountAssets()
       registerProvider()
-      if (!options || options.enableDemoSwitch !== false) {
+      if (options['enableDemoSwitch'] !== false) {
         startDemoSwitch()
       }
       debug('started')
     },
 
-    stop() {
+    stop(): void {
       running = false
       debug('stopped')
     }

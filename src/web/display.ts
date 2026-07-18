@@ -7,16 +7,19 @@ import {
   resolveDisplay,
   USE_DEFAULT,
   formatValue
-} from './common.js'
+} from './common'
+import type { UpdateArgs } from './common'
 
-function esc(s) {
-  return String(s).replace(/[&<>"]/g, (c) =>
-    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]
+function esc(s: unknown): string {
+  return String(s).replace(
+    /[&<>"]/g,
+    (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c] ?? c
   )
 }
 
-function render({ config, value, meta, prefs }) {
+function render({ config, value, meta, prefs }: UpdateArgs): void {
   const root = document.getElementById('root')
+  if (!root) return
   const { value: display, symbol } = resolveDisplay({
     value,
     convert: config.convert,
@@ -24,8 +27,8 @@ function render({ config, value, meta, prefs }) {
     prefs,
     path: config.path
   })
-  const units = config.units || symbol
-  let text
+  const units = config.units ?? symbol
+  let text: string
   if (value === undefined || value === null) {
     text = '--'
   } else if (typeof display === 'number') {
@@ -34,7 +37,7 @@ function render({ config, value, meta, prefs }) {
     text = String(display)
   }
   const configured = !!config.path
-  const rows = []
+  const rows: string[] = []
   if (config.topLabel) {
     rows.push(`<div class="display-top">${esc(config.topLabel)}</div>`)
   }
@@ -55,7 +58,8 @@ function render({ config, value, meta, prefs }) {
 startInstrument({
   defaults: { convert: USE_DEFAULT, decimals: 1, topLabel: '', bottomLabel: '' },
   onUpdate: render
-}).catch((err) => {
-  document.getElementById('root').textContent = 'Host connection failed'
+}).catch((err: unknown) => {
+  const root = document.getElementById('root')
+  if (root) root.textContent = 'Host connection failed'
   console.error(err)
 })

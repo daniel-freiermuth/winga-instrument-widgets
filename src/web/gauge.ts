@@ -5,25 +5,27 @@ import {
   resolveDisplay,
   USE_DEFAULT,
   formatValue
-} from './common.js'
+} from './common'
+import type { UpdateArgs } from './common'
 
 const START_ANGLE = -210 // degrees; sweep 240 degrees clockwise to +30
 const SWEEP = 240
 
-function polar(cx, cy, r, deg) {
+function polar(cx: number, cy: number, r: number, deg: number): [number, number] {
   const rad = (deg * Math.PI) / 180
   return [cx + r * Math.cos(rad), cy + r * Math.sin(rad)]
 }
 
-function arcPath(cx, cy, r, fromDeg, toDeg) {
+function arcPath(cx: number, cy: number, r: number, fromDeg: number, toDeg: number): string {
   const [x1, y1] = polar(cx, cy, r, fromDeg)
   const [x2, y2] = polar(cx, cy, r, toDeg)
   const large = toDeg - fromDeg > 180 ? 1 : 0
   return `M ${x1.toFixed(2)} ${y1.toFixed(2)} A ${r} ${r} 0 ${large} 1 ${x2.toFixed(2)} ${y2.toFixed(2)}`
 }
 
-function render({ config, value, meta, prefs }) {
+function render({ config, value, meta, prefs }: UpdateArgs): void {
   const root = document.getElementById('root')
+  if (!root) return
   const min = Number(config.min ?? 0)
   const max = Number(config.max ?? 10)
   const decimals = Number(config.decimals ?? 1)
@@ -34,8 +36,8 @@ function render({ config, value, meta, prefs }) {
     prefs,
     path: config.path
   })
-  const units = config.units || symbol
-  const label = config.label || config.path || 'Not configured'
+  const units = config.units ?? symbol
+  const label = config.label ?? config.path ?? 'Not configured'
 
   let frac = 0
   if (typeof display === 'number' && isFinite(display) && max > min) {
@@ -62,7 +64,8 @@ function render({ config, value, meta, prefs }) {
 startInstrument({
   defaults: { min: 0, max: 10, decimals: 1, convert: USE_DEFAULT },
   onUpdate: render
-}).catch((err) => {
-  document.getElementById('root').textContent = 'Host connection failed'
+}).catch((err: unknown) => {
+  const root = document.getElementById('root')
+  if (root) root.textContent = 'Host connection failed'
   console.error(err)
 })

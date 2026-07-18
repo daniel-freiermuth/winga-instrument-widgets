@@ -17,12 +17,54 @@
  *  hard-coded conversion". The default value of a widget's `convert` field. */
 export const USE_DEFAULT = 'default'
 
+export interface ConversionDef {
+  label: string
+  units: string
+  fn: (v: number) => number
+}
+
+export interface DisplayUnits {
+  formula?: string
+  symbol?: string
+  targetUnit?: string
+}
+
+export interface SkMeta {
+  units?: string
+  displayUnits?: DisplayUnits
+}
+
+export interface UnitPrefs {
+  speed?: string
+  temperature?: string
+  depth?: string
+  distance?: string
+  length?: string
+}
+
+export interface DisplayResult {
+  value: unknown
+  symbol: string
+}
+
+export interface ResolveDisplayArgs {
+  value: unknown
+  convert?: string | undefined
+  meta?: SkMeta | undefined
+  prefs?: UnitPrefs | null | undefined
+  path?: string | undefined
+  fallback?: string
+}
+
+// Internal fallback — avoids indexed-access uncertainty when CONVERSIONS['none'] is needed.
+const NONE_CONV: ConversionDef = { label: 'Raw value', units: '', fn: (v) => v }
+
 /** Named conversions from SK SI base units to common display units. Each holds
  *  the display symbol (`units`) and the conversion function (`fn`). Used both
  *  as explicit per-widget overrides and as the fallback when the server
  *  publishes no `displayUnits` for a path. */
-export const CONVERSIONS = {
-  none: { label: 'Raw value', units: '', fn: (v) => v },
+export const CONVERSIONS: Record<string, ConversionDef> = {
+  none: NONE_CONV,
   'ms-kn': { label: 'm/s → knots', units: 'kn', fn: (v) => v * 1.943844 },
   'ms-kmh': { label: 'm/s → km/h', units: 'km/h', fn: (v) => v * 3.6 },
   'ms-mph': { label: 'm/s → mph', units: 'mph', fn: (v) => v * 2.236936 },
@@ -44,17 +86,17 @@ export const CONVERSIONS = {
   'pa-hpa': { label: 'Pa → hPa', units: 'hPa', fn: (v) => v / 100 }
 }
 
-export function convert(value, conversionKey) {
-  const conv = CONVERSIONS[conversionKey] ?? CONVERSIONS.none
+export function convert(value: unknown, conversionKey: string): unknown {
+  const conv = CONVERSIONS[conversionKey] ?? NONE_CONV
   return typeof value === 'number' ? conv.fn(value) : value
 }
 
-export function conversionUnits(conversionKey) {
-  return (CONVERSIONS[conversionKey] ?? CONVERSIONS.none).units
+export function conversionUnits(conversionKey: string): string {
+  return (CONVERSIONS[conversionKey] ?? NONE_CONV).units
 }
 
 /** Conversion keys (see CONVERSIONS) valid per SK meta unit. */
-export const VALID_BY_UNIT = {
+export const VALID_BY_UNIT: Record<string, string[]> = {
   'm/s': ['none', 'ms-kn', 'ms-kmh', 'ms-mph'],
   K: ['none', 'k-c', 'k-f'],
   rad: ['none', 'rad-deg'],
@@ -67,8 +109,9 @@ export const VALID_BY_UNIT = {
  * Conversion keys to offer for a path. Unknown/missing meta units offer
  * everything (the user knows best when the server provides no metadata).
  */
-export function validConversions(units, allKeys) {
-  return (units && VALID_BY_UNIT[units]) || allKeys
+export function validConversions(units: string | undefined, allKeys: string[]): string[] {
+  if (units === undefined) return allKeys
+  return VALID_BY_UNIT[units] ?? allKeys
 }
 
 /**
@@ -79,7 +122,11 @@ export function validConversions(units, allKeys) {
  * Metre-unit paths are ambiguous (depth vs. trip distance vs. lengths), so
  * the path name picks which preference applies.
  */
-export function defaultConversion(units, path, prefs) {
+export function defaultConversion(
+  units: string | undefined,
+  path: string | undefined,
+  prefs: UnitPrefs | null | undefined
+): string {
   switch (units) {
     case 'm/s': {
       const speed = prefs?.speed
@@ -113,14 +160,14 @@ export function defaultConversion(units, path, prefs) {
 
 // Compiled `meta.displayUnits.formula` expressions, cached by formula string.
 // A formula is a server-provided expression in `value`, e.g. "value * 1.94384".
-const formulaCache = new Map()
+type FormulaFn = (value: number) => number
+const formulaCache = new Map<string, FormulaFn | null>()
 
-function compileFormula(formula) {
-  if (formulaCache.has(formula)) return formulaCache.get(formula)
-  let fn = null
+function compileFormula(formula: string): FormulaFn | null {
+  if (formulaCache.has(formula)) return formulaCache.get(formula) ?? null
+  let fn: FormulaFn | null = null
   try {
-    // eslint-disable-next-line no-new-func
-    fn = new Function('value', `"use strict"; return (${formula});`)
+    fn = new Function('value', `"use strict"; return (${formula});`) as FormulaFn
   } catch {
     fn = null
   }
@@ -130,7 +177,7 @@ function compileFormula(formula) {
 
 /** Apply a server `displayUnits.formula` to a value. Returns the value
  *  unchanged if it is not a finite number or the formula cannot be evaluated. */
-export function applyFormula(value, formula) {
+export function applyFormula(value: unknown, formula: string): unknown {
   if (typeof value !== 'number' || !isFinite(value)) return value
   const fn = compileFormula(formula)
   if (!fn) return value
@@ -145,17 +192,6 @@ export function applyFormula(value, formula) {
 /**
  * Resolve how to display a value for a widget, honouring the authority order
  * described at the top of this file. Returns `{ value, symbol }`.
- *
- * @param {object} args
- * @param {*}      args.value    the raw value from Signal K (SI base unit)
- * @param {string} args.convert  the widget's `convert` setting (a CONVERSIONS
- *                               key, or USE_DEFAULT / undefined)
- * @param {object} [args.meta]   the path's SK metadata ({ units, displayUnits })
- * @param {object} [args.prefs]  the host's `units.get` category preferences
- * @param {string} [args.path]   the Signal K path (used by the fallback)
- * @param {string} [args.fallback] conversion key to use when the heuristic
- *                               finds nothing better (e.g. 'ratio-pct' for the
- *                               percent meter). Defaults to 'none'.
  */
 export function resolveDisplay({
   value,
@@ -164,10 +200,11 @@ export function resolveDisplay({
   prefs,
   path,
   fallback = 'none'
-}) {
+}: ResolveDisplayArgs): DisplayResult {
   // 1. Explicit per-widget conversion — the ultimate authority.
-  if (key && key !== USE_DEFAULT && CONVERSIONS[key]) {
-    return { value: convert(value, key), symbol: CONVERSIONS[key].units }
+  if (key && key !== USE_DEFAULT) {
+    const conv = CONVERSIONS[key]
+    if (conv) return { value: convert(value, key), symbol: conv.units }
   }
 
   // 2. Server per-path display preference.
@@ -182,5 +219,5 @@ export function resolveDisplay({
   // 3. Fallback: SK base unit + host category preference.
   let fk = defaultConversion(meta?.units, path, prefs)
   if (fk === 'none' && CONVERSIONS[fallback]) fk = fallback
-  return { value: convert(value, fk), symbol: CONVERSIONS[fk].units }
+  return { value: convert(value, fk), symbol: (CONVERSIONS[fk] ?? NONE_CONV).units }
 }
