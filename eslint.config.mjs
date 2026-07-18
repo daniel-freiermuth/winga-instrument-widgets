@@ -67,11 +67,12 @@ export default ts.config(
   },
   {
     // Catch imports of packages not declared in package.json.
-    // devDependencies are only allowed in build scripts, tests, and this config.
+    // devDependencies are only allowed in build scripts, tests, browser bundle
+    // sources (src/web — compiled and bundled, never executed directly), and configs.
     plugins: { 'import-x': importX },
     rules: {
       'import-x/no-extraneous-dependencies': ['error', {
-        devDependencies: ['scripts/**', 'test/**', 'eslint.config.mjs', 'rollup.config.mjs'],
+        devDependencies: ['scripts/**', 'test/**', 'src/web/**', 'eslint.config.mjs', 'rollup.config.mjs'],
       }],
     },
   },

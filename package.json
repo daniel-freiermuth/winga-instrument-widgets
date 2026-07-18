@@ -1,8 +1,14 @@
 {
-  "name": "signalk-instrument-widgets",
-  "version": "0.5.2",
+  "name": "winga-instrument-widgets",
+  "version": "0.1.0",
   "description": "Gauge, meter and switch widgets for Signal K chartplotters that support the plotterExtensions resource type",
   "main": "dist/plugin/index.js",
+  "exports": {
+    ".": "./dist/plugin/index.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
   "keywords": [
     "signalk-node-server-plugin",
     "signalk-category-chart-plotters"
@@ -23,17 +29,14 @@
     "lint": "eslint .",
     "check": "tsc --noEmit && eslint . && node --import tsx/esm --test test/manifest.test.ts test/units.test.ts"
   },
-  "author": "Joel Kozikowski",
+  "author": "Daniel Freiermuth",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/joelkoz/signalk-instrument-widgets.git"
-  },
-  "dependencies": {
-    "signalk-plotterext-bus": "^0.10.0"
+    "url": "git+https://github.com/daniel-freiermuth/signalk-instrument-widgets.git"
   },
   "peerDependencies": {
-    "express": "*"
+    "express": "^4 || ^5"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
@@ -53,7 +56,7 @@
   },
   "signalk-plugin-enabled-by-default": false,
   "signalk": {
-    "appIcon": "assets/instrument-widgets.png",
+    "appIcon": "public/assets/instrument-widgets.png",
     "displayName": "Instrument Widgets",
     "appSupport": "none",
     "screenshots": [
@@ -64,7 +67,7 @@
       "categories": [
         "chart-plotters"
       ],
-      "author": "Joel Kozikowski",
+      "author": "Daniel Freiermuth",
       "description": "Gauge, meter and switch widgets for Signal K chartplotters that support the plotterExtensions resource type"
     }
   }
