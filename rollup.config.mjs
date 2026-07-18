@@ -120,8 +120,8 @@ const browserConfigs = webEntries.map((name) => ({
 
 // Signal K plugin → CJS.
 // express is a runtime peer supplied by the SK server; mark it external.
-// The footer hoists the default export so require('dist/plugin/index.js')
-// returns the factory function directly, as SK expects.
+// Rollup's CJS output for a single `export default` sets module.exports to the
+// factory function directly — no footer needed.
 // json() is needed because plugin/index.ts imports package.json for the version.
 const pluginConfig = {
   input: 'plugin/index.ts',
@@ -130,7 +130,6 @@ const pluginConfig = {
     file: 'dist/plugin/index.js',
     format: 'cjs',
     sourcemap: true,
-    footer: 'module.exports = exports["default"];',
   },
   plugins: [
     json(),
