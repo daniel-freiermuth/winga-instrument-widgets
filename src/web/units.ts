@@ -413,11 +413,13 @@ export function formatDuration(seconds: number): string {
 
 /**
  * Format an ISO 8601 timestamp string as a compact local-time display.
- * The optional `now` argument (ms since epoch) is exposed for unit testing.
  *
- *  |Δ| <  1 d  →  HH:MM:SS            (browser local time zone)
- *  |Δ| < 10 d  →  HH:MM+Nd / HH:MM-Nd (future / past; N = 1–9)
- *  |Δ| ≥ 10 d  →  localised date (e.g. "Jul 28" or "Jul 28, 2027")
+ *  |Δ| <  1 d  →  HH:MM:SS              (browser local time zone)
+ *  future, cal-day 1  →  HH:MM +1d
+ *  future, cal-day 2–7  →  W HH:MM       (short weekday, e.g. "Thu 14:30")
+ *  future, cal-day > 7  →  localised date (e.g. "Jul 28" or "Jul 28, 2027")
+ *  past, |Δ| < 10 d  →  HH:MM-Nd
+ *  past, |Δ| ≥ 10 d  →  localised date
  *
  * Unparseable input is returned verbatim.
  */
@@ -435,12 +437,32 @@ export function formatTimestamp(iso: string, now = Date.now()): string {
   if (absDays < 1) {
     return `${hh}:${mm}:${ss}`
   }
+
+  if (delta > 0) {
+    // Calendar-day distance in the browser's local time zone.
+    const nowDay = new Date(now); nowDay.setHours(0, 0, 0, 0)
+    const evtDay = new Date(d.getTime()); evtDay.setHours(0, 0, 0, 0)
+    const calDays = Math.round((evtDay.getTime() - nowDay.getTime()) / 86400000)
+
+    if (calDays === 1) return `${hh}:${mm} +1d`
+    if (calDays <= 7) {
+      const wd = d.toLocaleDateString(undefined, { weekday: 'short' })
+      return `${wd} ${hh}:${mm}`
+    }
+    // > 7 calendar days: date only.
+    const nowDate = new Date(now)
+    const opts: Intl.DateTimeFormatOptions =
+      d.getFullYear() === nowDate.getFullYear()
+        ? { month: 'short', day: 'numeric' }
+        : { month: 'short', day: 'numeric', year: 'numeric' }
+    return d.toLocaleDateString(undefined, opts)
+  }
+
+  // Past (delta ≤ 0, absDays ≥ 1): legacy −Nd / date format.
   if (absDays < 10) {
     const n = Math.floor(absDays)
-    const sign = delta >= 0 ? '+' : '-'
-    return `${hh}:${mm}${sign}${n}d`
+    return `${hh}:${mm}-${n}d`
   }
-  // 10+ days: date only.
   const nowDate = new Date(now)
   const opts: Intl.DateTimeFormatOptions =
     d.getFullYear() === nowDate.getFullYear()

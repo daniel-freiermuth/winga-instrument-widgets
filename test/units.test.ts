@@ -196,7 +196,7 @@ test('formatDuration: non-finite input returns placeholder', () => {
 
 // ─── formatTimestamp ──────────────────────────────────────────────────────────
 // Tests use a fixed `now` so results are timezone-independent for format
-// structure checks.  Exact HH:MM:SS values depend on the local TZ and are
+// structure checks.  Exact HH:MM values depend on the local TZ and are
 // therefore only checked via regex.
 
 // Reference: 2024-07-18T00:00:00Z
@@ -209,21 +209,29 @@ test('formatTimestamp: within 24 h shows HH:MM:SS', () => {
   assert.match(formatTimestamp(behind, REF), /^\d{2}:\d{2}:\d{2}$/)
 })
 
-test('formatTimestamp: 1–9 days away shows HH:MM±Nd', () => {
-  const ahead = new Date(REF + 2 * 86400000).toISOString()   // +2 d
-  const behind = new Date(REF - 3 * 86400000).toISOString()  // -3 d
-  assert.match(formatTimestamp(ahead, REF), /^\d{2}:\d{2}\+\d+d$/)
-  assert.match(formatTimestamp(behind, REF), /^\d{2}:\d{2}-\d+d$/)
-  assert.ok(formatTimestamp(ahead, REF).endsWith('+2d'))
-  assert.ok(formatTimestamp(behind, REF).endsWith('-3d'))
+test('formatTimestamp: calendar tomorrow shows HH:MM +1d', () => {
+  // +25 h lands on the next calendar day across all sane time zones.
+  const ahead = new Date(REF + 25 * 3600000).toISOString()
+  assert.match(formatTimestamp(ahead, REF), /^\d{2}:\d{2} \+1d$/)
 })
 
-test('formatTimestamp: 10+ days away shows date string', () => {
-  const ahead = new Date(REF + 11 * 86400000).toISOString()
+test('formatTimestamp: 2–7 calendar days shows weekday HH:MM', () => {
+  const ahead = new Date(REF + 3 * 86400000).toISOString()  // +3 d
+  assert.match(formatTimestamp(ahead, REF), /^\S+ \d{2}:\d{2}$/)
+})
+
+test('formatTimestamp: 8+ calendar days shows date string', () => {
+  const ahead = new Date(REF + 10 * 86400000).toISOString()
   const result = formatTimestamp(ahead, REF)
   // A formatted date should not start with HH:MM pattern.
   assert.ok(!/^\d{2}:\d{2}/.test(result), `expected date, got ${result}`)
   assert.ok(result.length > 0)
+})
+
+test('formatTimestamp: past 1–9 days shows HH:MM-Nd', () => {
+  const behind = new Date(REF - 3 * 86400000).toISOString()  // -3 d
+  assert.match(formatTimestamp(behind, REF), /^\d{2}:\d{2}-\d+d$/)
+  assert.ok(formatTimestamp(behind, REF).endsWith('-3d'))
 })
 
 test('formatTimestamp: unparseable input is returned verbatim', () => {
