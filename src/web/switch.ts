@@ -37,6 +37,11 @@ window.addEventListener('pointerup', () => {
   if (!client.hasCapability('signalk.put')) return
   client.signalk.put(config.path, isOn(value) ? 0 : 1).catch((err: unknown) => {
     console.warn('switch PUT failed', err)
+    const sw = document.querySelector<HTMLElement>('#root .switch')
+    if (sw) {
+      sw.classList.add('error')
+      setTimeout(() => { sw.classList.remove('error') }, 2000)
+    }
   })
 })
 

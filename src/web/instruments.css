@@ -134,6 +134,12 @@ svg rect.track {
 .switch.unknown .switch-state {
   color: #6c7f8e;
 }
+.switch.error .switch-pill {
+  background: #b71c1c;
+}
+.switch.error .switch-state {
+  color: #ef9a9a;
+}
 .switch-label {
   font-size: 13px;
   color: #9fb3c4;
