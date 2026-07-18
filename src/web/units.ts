@@ -165,14 +165,15 @@ const formulaCache = new Map<string, FormulaFn | null>()
 
 function compileFormula(formula: string): FormulaFn | null {
   if (formulaCache.has(formula)) return formulaCache.get(formula) ?? null
-  let fn: FormulaFn | null = null
   try {
-    fn = new Function('value', `"use strict"; return (${formula});`) as FormulaFn
+    // eslint-disable-next-line @typescript-eslint/no-implied-eval -- intentional: server-provided formula evaluation
+    const fn = new Function('value', `"use strict"; return (${formula});`) as FormulaFn
+    formulaCache.set(formula, fn)
+    return fn
   } catch {
-    fn = null
+    formulaCache.set(formula, null)
+    return null
   }
-  formulaCache.set(formula, fn)
-  return fn
 }
 
 /** Apply a server `displayUnits.formula` to a value. Returns the value

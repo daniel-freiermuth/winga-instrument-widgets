@@ -26,9 +26,9 @@ function arcPath(cx: number, cy: number, r: number, fromDeg: number, toDeg: numb
 function render({ config, value, meta, prefs }: UpdateArgs): void {
   const root = document.getElementById('root')
   if (!root) return
-  const min = Number(config.min ?? 0)
-  const max = Number(config.max ?? 10)
-  const decimals = Number(config.decimals ?? 1)
+  const min = config.min ?? 0
+  const max = config.max ?? 10
+  const decimals = config.decimals ?? 1
   const { value: display, symbol } = resolveDisplay({
     value,
     convert: config.convert,

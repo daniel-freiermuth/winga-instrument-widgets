@@ -32,7 +32,7 @@ function render({ config, value, meta, prefs }: UpdateArgs): void {
   if (value === undefined || value === null) {
     text = '--'
   } else if (typeof display === 'number') {
-    text = formatValue(display, Number(config.decimals ?? 1))
+    text = formatValue(display, config.decimals ?? 1)
   } else {
     text = String(display)
   }

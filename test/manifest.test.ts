@@ -39,7 +39,7 @@ function fakeApp(): SkApp & { calls: FakeAppCalls } {
     debug: (): void => {},
     error: (): void => {},
     registerResourceProvider: (p): void => {
-      calls.providers.push(p as ProviderCall)
+      calls.providers.push(p)
     },
     registerPutHandler: (ctx, path, handler): void => {
       calls.putHandlers.push({ ctx, path, handler })

@@ -134,10 +134,10 @@ export async function startInstrument({
 
   async function applyConfig(): Promise<void> {
     const stored = await client.state.get()
-    // Spread stored (Record<string,unknown>) over typed defaults. The cast is
-    // sound: stored keys that match InstrumentConfig fields have compatible
-    // types; unknown extra keys are ignored by callers.
-    config = { ...defaults, ...stored } as InstrumentConfig
+    // Spread stored (Record<string,unknown>) over typed defaults. TypeScript
+    // accepts this via contextual typing; at runtime the stored values come
+    // from Signal K state and always carry compatible InstrumentConfig types.
+    config = { ...defaults, ...stored }
     value = undefined
     meta = undefined
     if (unsubscribeSk !== null) {

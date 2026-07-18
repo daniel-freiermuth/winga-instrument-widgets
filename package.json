@@ -19,7 +19,8 @@
     "build": "node --import tsx/esm scripts/build.ts",
     "test": "node --import tsx/esm --test test/manifest.test.ts test/units.test.ts",
     "typecheck": "tsc --noEmit",
-    "prepare": "node --import tsx/esm scripts/build.ts"
+    "prepare": "node --import tsx/esm scripts/build.ts",
+    "lint": "eslint ."
   },
   "author": "Joel Kozikowski",
   "license": "MIT",
@@ -27,13 +28,24 @@
     "type": "git",
     "url": "git+https://github.com/joelkoz/signalk-instrument-widgets.git"
   },
+  "dependencies": {
+    "signalk-plotterext-bus": "^0.10.0"
+  },
+  "peerDependencies": {
+    "express": "*"
+  },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@types/express": "^5.0.0",
     "@types/node": "^22.0.0",
     "esbuild": "^0.27.0",
+    "eslint": "^10.7.0",
+    "eslint-plugin-import-x": "^4.17.1",
+    "globals": "^17.7.0",
     "signalk-plotterext-bus": "^0.10.0",
     "tsx": "^4.19.0",
-    "typescript": "^5.6.0"
+    "typescript": "^5.6.0",
+    "typescript-eslint": "^8.64.0"
   },
   "signalk-plugin-enabled-by-default": false,
   "signalk": {

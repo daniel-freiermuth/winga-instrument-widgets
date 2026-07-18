@@ -170,22 +170,20 @@ export default function plugin(app: SkApp): Plugin {
     app.registerResourceProvider({
       type: 'plotterExtensions',
       methods: {
-        listResources: async (): Promise<Record<string, unknown>> => {
-          if (!running) return {}
-          return { [PLUGIN_ID]: buildManifest() }
+        listResources: (): Promise<Record<string, unknown>> => {
+          if (!running) return Promise.resolve({})
+          return Promise.resolve({ [PLUGIN_ID]: buildManifest() })
         },
-        getResource: async (id: string): Promise<unknown> => {
+        getResource: (id: string): Promise<unknown> => {
           if (!running || id !== PLUGIN_ID) {
-            throw new Error(`No such plotterExtensions resource: ${id}`)
+            return Promise.reject(new Error(`No such plotterExtensions resource: ${id}`))
           }
-          return buildManifest()
+          return Promise.resolve(buildManifest())
         },
-        setResource: async (): Promise<void> => {
-          throw new Error(`${PLUGIN_ID} is a read-only provider`)
-        },
-        deleteResource: async (): Promise<void> => {
-          throw new Error(`${PLUGIN_ID} is a read-only provider`)
-        }
+        setResource: (): Promise<void> =>
+          Promise.reject(new Error(`${PLUGIN_ID} is a read-only provider`)),
+        deleteResource: (): Promise<void> =>
+          Promise.reject(new Error(`${PLUGIN_ID} is a read-only provider`))
       }
     })
     providerRegistered = true

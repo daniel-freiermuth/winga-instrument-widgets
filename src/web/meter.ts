@@ -34,7 +34,7 @@ function render({ config, value, meta, prefs }: UpdateArgs): void {
     <text x="100" y="18" class="label meter-label">${label}</text>
     <rect x="8" y="28" width="184" height="32" rx="8" class="track"/>
     <rect x="8" y="28" width="${(184 * pct) / 100}" height="32" rx="8" class="fillbar"/>
-    <text x="100" y="92" class="value meter-value">${formatValue(display, Number(config.decimals ?? 0))}%</text>
+    <text x="100" y="92" class="value meter-value">${formatValue(display, config.decimals ?? 0)}%</text>
   </svg>`
 }
 
