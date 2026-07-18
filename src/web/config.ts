@@ -167,25 +167,17 @@ function fieldRow(label: string, control: string): string {
   return html`<label class="row"><span>${label}</span>${raw(control)}</label>`
 }
 
-function buildForm(
-  widgetType: string,
-  paths: string[],
-  labelByPath: Record<string, string>,
-  state: InstrumentConfig
-): string {
+function buildForm(widgetType: string, state: InstrumentConfig): string {
   const spec = WIDGET_FIELDS[widgetType] ?? WIDGET_FIELDS['gauge']!
   const rows: string[] = []
-  const opts = paths.map((p) => {
-    const label = labelByPath[p]
-    return label
-      ? html`<option value="${p}" label="${label}">`
-      : html`<option value="${p}">`
-  }).join('')
   rows.push(
     fieldRow(
       'Signal K path',
-      html`<input id="path" list="paths" value="${state.path ?? ''}" placeholder="Type to search...">
-       <datalist id="paths">${raw(opts)}</datalist>`
+      html`<div class="path-picker">
+        <input id="path" type="text" autocomplete="off"
+               value="${state.path ?? ''}" placeholder="Type to search…">
+        <ul class="path-suggestions" id="path-suggestions" hidden></ul>
+      </div>`
     )
   )
   if (spec.fields.includes('label')) {
@@ -316,20 +308,57 @@ async function main(): Promise<void> {
 
   root.innerHTML = html`
     <h2>Configure ${widgetType}</h2>
-    <form id="form">${raw(buildForm(widgetType, allPaths, labelByPath, state))}</form>
+    <form id="form">${raw(buildForm(widgetType, state))}</form>
     <p class="status" id="status"></p>
     <div class="actions">
       <button type="button" id="cancel">Cancel</button>
       <button type="button" id="save" class="primary">Save</button>
     </div>`
 
+  // ── Path autocomplete ───────────────────────────────────────────────────────
+  const pathInput = document.getElementById('path') as HTMLInputElement
+  const suggList  = document.getElementById('path-suggestions') as HTMLUListElement
+
+  const showSuggestions = (filter: string): void => {
+    const f = filter.trim().toLowerCase()
+    const hits = f === ''
+      ? allPaths
+      : allPaths.filter(
+          (p) => p.toLowerCase().includes(f) ||
+                 (labelByPath[p] ?? '').toLowerCase().includes(f)
+        )
+    if (hits.length === 0) { suggList.hidden = true; return }
+    suggList.innerHTML = hits.slice(0, 60).map((p) => {
+      const lbl = labelByPath[p]
+      return lbl
+        ? html`<li data-path="${p}"><span class="sugg-label">${lbl}</span><span class="sugg-path">${p}</span></li>`
+        : html`<li data-path="${p}"><span class="sugg-path">${p}</span></li>`
+    }).join('')
+    suggList.hidden = false
+  }
+
+  // pointerdown.preventDefault() keeps focus on the input so blur doesn't fire
+  // before the click handler selects the suggestion.  Works for both mouse
+  // and touch in Chromium-based WebViews.
+  suggList.addEventListener('pointerdown', (e) => e.preventDefault())
+  suggList.addEventListener('click', (e) => {
+    const li = (e.target as Element).closest<HTMLElement>('li[data-path]')
+    if (!li) return
+    pathInput.value = li.dataset['path'] ?? ''
+    suggList.hidden = true
+    pathInput.dispatchEvent(new Event('change'))
+  })
+  pathInput.addEventListener('focus',  () => showSuggestions(pathInput.value))
+  pathInput.addEventListener('blur',   () => { suggList.hidden = true })
+  pathInput.addEventListener('input',  () => showSuggestions(pathInput.value))
+
+  // ── Conversion options ──────────────────────────────────────────────────────
   if (spec.fields.includes('convert')) {
     const refresh = (): void =>
       refreshConversionOptions(unitsByPath, state.path, state.convert)
     refresh()
-    const pathInput = document.getElementById('path') as HTMLInputElement | null
-    pathInput?.addEventListener('change', refresh)
-    pathInput?.addEventListener('input', () => {
+    pathInput.addEventListener('change', refresh)
+    pathInput.addEventListener('input', () => {
       if (unitsByPath[pathInput.value.trim()] !== undefined) refresh()
     })
   }
