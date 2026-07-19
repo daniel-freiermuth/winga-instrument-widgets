@@ -35,21 +35,24 @@ plugin/     Plugin entry (CommonJS) run by the Signal K server: registers
 src/web/    Widget/panel browser source (plain JS modules + CSS).
             common.js is the shared runtime: host connection, config
             loading, and value conversion.
-scripts/    build.mjs — esbuild bundles src/web -> public/ and generates
-            the HTML pages.
-public/     Built web assets, committed. Served by the plugin as a top-level
-            static route at /plotterext/signalk-instrument-widgets/ (not a
-            signalk-webapp, so absent from the Webapps launcher). Generated —
-            do not hand-edit; edit src/web and rebuild.
+rollup.config.mjs — rollup bundles src/web → public/ and generates the
+            HTML pages (via the webAssets plugin in the config).
+public/     Build output (gitignored). Generated from src/web/ by rollup.
+            Served by the plugin as a top-level static route at
+            /plotterext/signalk-instrument-widgets/ (not a signalk-webapp, so
+            absent from the Webapps launcher). NOT a source artifact — do not
+            hand-edit or commit; edit src/web and rebuild. It is whitelisted in
+            "files", and the prepare script rebuilds it on publish, so it ships
+            in the npm tarball without being in git.
 test/       node --test suites for the plugin contract.
 ```
 
 ## Build / test
 
 ```sh
-npm install
-npm run build     # bundle src/web -> public/
-npm test          # plugin contract tests (node --test)
+pnpm install
+pnpm run build    # bundle src/web -> public/
+pnpm test         # plugin contract tests (node --test)
 ```
 
 To exercise the widgets end to end you need a Signal K server with this
@@ -74,9 +77,14 @@ the built-in demo switch path covers the switch widget anywhere.
 - **No server-side runtime dependencies.** The bus client is bundled into
   the browser assets at build time; the plugin itself must run with nothing
   beyond what the Signal K server provides.
-  - Note: until `signalk-plotterext-bus` is published to npm, `package.json`
-    carries it as a local `file:` devDependency. Replace with a semver range
-    at publication time.
+  - `signalk-plotterext-bus` is a **devDependency referenced by its published
+    semver range**, never a local `file:` path. It is bundled into the browser
+    assets at build time, so it is not a runtime dependency. If you develop
+    against a local checkout of the bus, do **not** commit the resulting
+    lockfile — it records the sibling path and pins the linked version, which
+    breaks `npm ci` in CI. Regenerate from the registry before committing:
+    `rm -rf node_modules pnpm-lock.yaml && pnpm install`, then confirm the
+    lock has zero local-path references.
 - **Widgets are guests on someone else's chart.** They must render
   responsively inside whatever frame size the host provides, keep a
   translucent-dark visual treatment that works over light and dark charts,
@@ -86,5 +94,13 @@ the built-in demo switch path covers the switch widget anywhere.
 - All host communication goes through the bus client. The one sanctioned
   exception is the configuration panel fetching the Signal K data tree
   directly over same-origin REST to enumerate candidate paths.
-- Keep manifest, `REQUIREMENTS.md`, and built `public/` assets in sync —
-  rebuild and commit `public/` in the same change as any `src/web` edit.
+- Keep the manifest and `REQUIREMENTS.md` in sync with any `src/web` edit.
+  `public/` is gitignored build output — rebuild it to test, but there is
+  nothing to commit; `prepare` regenerates it at publish time.
+- **Build scripts must log to stderr, never stdout.** npm 10 (Node 22) runs
+  `prepare` during `npm pack` even under `--ignore-scripts`, so anything on
+  stdout is prepended to the JSON that `npm pack --json` emits — which the
+  SignalK plugin-CI package check parses. Its parse then fails and the check
+  reports the entry point as missing. Node 24 / npm 11 skips the build and
+  masks this, so it fails on Node 22 only. Use `console.error` for build
+  progress; rollup's own output goes to stderr automatically.
