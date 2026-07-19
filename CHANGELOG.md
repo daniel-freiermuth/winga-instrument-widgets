@@ -5,6 +5,17 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.1] - 2026-07-18
+
+### Added
+
+- ETA timestamps now display using the weekday name (e.g. `Mon 14:32`) instead of a suffixed day offset (e.g. `14:32+2d`).
+
+### Fixed
+
+- Switch widget now displays an error message when a PUT request fails.
+- Path-suggestion entries in the configuration panel are constrained to a single line so the dropdown stays compact.
+
 ## [0.3.0] - 2026-07-18
 
 ### Changed
