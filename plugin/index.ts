@@ -233,7 +233,7 @@ export default function plugin(app: SkApp): Plugin {
       running = true
       void mountAssets()
       registerProvider()
-      if (options['enableDemoSwitch'] !== false) {
+      if (!options || options['enableDemoSwitch'] !== false) {
         startDemoSwitch()
       }
       debug('started')
