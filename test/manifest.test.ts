@@ -154,9 +154,11 @@ test('provider returns empty list when plugin is stopped', async () => {
 })
 
 
-test('start with null options does not throw', () => {
+test('start with null options enables demo switch by default', () => {
   const app = fakeApp()
   const p: Plugin = pluginFactory(app)
-  assert.doesNotThrow(() => { p.start(null as any) })
+  assert.doesNotThrow(() => { p.start(null) })
+  assert.strictEqual(app.calls.putHandlers.length, 1, 'PUT handler registered')
+  assert.strictEqual(app.calls.messages.length, 1, 'initial delta emitted')
   p.stop()
 })
