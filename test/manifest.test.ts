@@ -152,3 +152,13 @@ test('provider returns empty list when plugin is stopped', async () => {
   const provider = app.calls.providers[0]!
   assert.deepStrictEqual(await provider.methods.listResources({}), {})
 })
+
+
+test('start with null options enables demo switch by default', () => {
+  const app = fakeApp()
+  const p: Plugin = pluginFactory(app)
+  assert.doesNotThrow(() => { p.start(null) })
+  assert.strictEqual(app.calls.putHandlers.length, 1, 'PUT handler registered')
+  assert.strictEqual(app.calls.messages.length, 1, 'initial delta emitted')
+  p.stop()
+})

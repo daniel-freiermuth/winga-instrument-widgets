@@ -125,7 +125,7 @@ export interface Plugin {
   name: string
   description: string
   schema: () => Record<string, unknown>
-  start: (options: Record<string, unknown>) => void
+  start: (options: Record<string, unknown> | null | undefined) => void
   stop: () => void
 }
 
@@ -229,11 +229,11 @@ export default function plugin(app: SkApp): Plugin {
       }
     }),
 
-    start(options: Record<string, unknown>): void {
+    start(options: Record<string, unknown> | null | undefined): void {
       running = true
       void mountAssets()
       registerProvider()
-      if (options['enableDemoSwitch'] !== false) {
+      if (!options || options['enableDemoSwitch'] !== false) {
         startDemoSwitch()
       }
       debug('started')
