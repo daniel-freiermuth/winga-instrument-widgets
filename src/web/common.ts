@@ -159,8 +159,9 @@ export async function startInstrument({
     }
     emit()
     if (config.path) {
-      meta = await fetchMeta(config.path)
+      const fetchedMeta = await fetchMeta(config.path)
       if (gen !== configGen) return
+      meta = fetchedMeta
       emit()
       const unsub = await client.signalk.subscribe([config.path], (ev) => {
         if (gen !== configGen) return
