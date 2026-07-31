@@ -137,11 +137,14 @@ export async function startInstrument({
   let value: unknown
   let meta: SkMeta | undefined
   let unsubscribeSk: (() => Promise<void>) | null = null
+  let configGen = 0
 
   const emit = (): void => onUpdate({ config, value, meta, prefs, client })
 
   async function applyConfig(): Promise<void> {
+    const gen = ++configGen
     const stored = await client.state.get()
+    if (gen !== configGen) return
     // Spread stored (Record<string,unknown>) over typed defaults. TypeScript
     // accepts this via contextual typing; at runtime the stored values come
     // from Signal K state and always carry compatible InstrumentConfig types.
@@ -152,15 +155,23 @@ export async function startInstrument({
       const u = unsubscribeSk
       unsubscribeSk = null
       await u().catch(() => {})
+      if (gen !== configGen) return
     }
     emit()
     if (config.path) {
       meta = await fetchMeta(config.path)
+      if (gen !== configGen) return
       emit()
-      unsubscribeSk = await client.signalk.subscribe([config.path], (ev) => {
+      const unsub = await client.signalk.subscribe([config.path], (ev) => {
+        if (gen !== configGen) return
         value = ev.value
         emit()
       })
+      if (gen !== configGen) {
+        await unsub().catch(() => {})
+        return
+      }
+      unsubscribeSk = unsub
     }
   }
 
