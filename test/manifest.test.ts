@@ -152,3 +152,18 @@ test('provider returns empty list when plugin is stopped', async () => {
   const provider = app.calls.providers[0]!
   assert.deepStrictEqual(await provider.methods.listResources({}), {})
 })
+
+test('assets are mounted synchronously during start()', () => {
+  const useCalls: { path: string }[] = []
+  const app: SkApp & { calls: FakeAppCalls } = {
+    ...fakeApp(),
+    use: (path: string, _handler: unknown): void => {
+      useCalls.push({ path })
+    }
+  }
+  const p: Plugin = pluginFactory(app)
+  p.start({})
+  assert.strictEqual(useCalls.length, 1, 'app.use must be called before start() returns')
+  assert.match(useCalls[0]!.path, /^\/plotterext\//)
+  p.stop()
+})
