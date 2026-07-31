@@ -167,3 +167,12 @@ test('assets are mounted synchronously during start()', () => {
   assert.match(useCalls[0]!.path, /^\/plotterext\//)
   p.stop()
 })
+
+test('start with null options enables demo switch by default', () => {
+  const app = fakeApp()
+  const p: Plugin = pluginFactory(app)
+  assert.doesNotThrow(() => { p.start(null) })
+  assert.strictEqual(app.calls.putHandlers.length, 1, 'PUT handler registered')
+  assert.strictEqual(app.calls.messages.length, 1, 'initial delta emitted')
+  p.stop()
+})
