@@ -163,6 +163,11 @@ export function defaultConversion(
       }
       return prefs?.length === 'foot' ? 'm-ft' : 'none'
     }
+    case 'RFC 2822':
+    case 'ISO 8601':
+      return 'iso8601'
+    case 's':
+      return 's-duration'
     default:
       return 'none'
   }

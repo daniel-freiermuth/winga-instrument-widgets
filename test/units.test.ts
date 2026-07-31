@@ -258,3 +258,12 @@ test('formatDistance: non-finite returns placeholder', () => {
   assert.strictEqual(formatDistance(Infinity), '--')
   assert.strictEqual(formatDistance(NaN), '--')
 })
+
+test('defaultConversion returns iso8601 for RFC 2822 and ISO 8601 units', () => {
+  assert.strictEqual(defaultConversion('RFC 2822', 'navigation.course.calcValues.estimatedTimeOfArrival', null), 'iso8601')
+  assert.strictEqual(defaultConversion('ISO 8601', 'navigation.datetime', null), 'iso8601')
+})
+
+test('defaultConversion returns s-duration for s units', () => {
+  assert.strictEqual(defaultConversion('s', 'navigation.course.calcValues.timeToGo', null), 's-duration')
+})
