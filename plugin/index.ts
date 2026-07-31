@@ -17,6 +17,7 @@
 
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import express from 'express'
 import pkg from '../package.json'
 
 const _dirname = dirname(fileURLToPath(import.meta.url))
@@ -140,13 +141,14 @@ export default function plugin(app: SkApp): Plugin {
   // Serve public/ as a top-level static route. Express is provided by the
   // Signal K server, so requiring it adds no runtime dependency of our own.
   // Guarded so the test harness (a fake app with no .use) is a no-op.
-  // express is a runtime peer supplied by the Signal K server; not in our
-  // package.json, so static import is not possible.
-  const mountAssets = async (): Promise<void> => {
+  // express is a peerDependency served by the Signal K server. Rollup compiles
+  // this file to CJS with express external, so this static import becomes a
+  // synchronous require() in the output — assets are mounted before start()
+  // returns and the manifest never exposes widget URLs before they are served.
+  const mountAssets = (): void => {
     if (assetsMounted) return
     if (typeof app.use !== 'function') return
     try {
-      const { default: express } = await import('express')
       app.use(ASSET_BASE, express.static(PUBLIC_DIR))
     } catch {
       app.error(`${PLUGIN_ID}: express unavailable; cannot serve ${ASSET_BASE}`)
@@ -231,9 +233,9 @@ export default function plugin(app: SkApp): Plugin {
 
     start(options: Record<string, unknown> | null | undefined): void {
       running = true
-      void mountAssets()
+      mountAssets()
       registerProvider()
-      if (!options || options['enableDemoSwitch'] !== false) {
+      if (options?.['enableDemoSwitch'] !== false) {
         startDemoSwitch()
       }
       debug('started')
