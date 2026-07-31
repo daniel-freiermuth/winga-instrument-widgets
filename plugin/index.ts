@@ -15,13 +15,12 @@
 // It is deliberately NOT a /plugins/* route: those are admin-gated, which
 // would break read-only users.
 
-import { createRequire } from 'node:module'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import express from 'express'
 import pkg from '../package.json'
 
 const _dirname = dirname(fileURLToPath(import.meta.url))
-const _require = createRequire(import.meta.url)
 
 const PLUGIN_ID = 'winga-instrument-widgets'
 const ASSET_BASE = `/plotterext/${PLUGIN_ID}`
@@ -142,15 +141,14 @@ export default function plugin(app: SkApp): Plugin {
   // Serve public/ as a top-level static route. Express is provided by the
   // Signal K server, so requiring it adds no runtime dependency of our own.
   // Guarded so the test harness (a fake app with no .use) is a no-op.
-  // express is a runtime peer supplied by the Signal K server; not in our
-  // package.json, so static import is not possible — use createRequire to
-  // keep the mount synchronous (matching the old CJS code) so assets are
-  // served before start() returns and the manifest exposes widget URLs.
+  // express is a peerDependency served by the Signal K server. Rollup compiles
+  // this file to CJS with express external, so this static import becomes a
+  // synchronous require() in the output — assets are mounted before start()
+  // returns and the manifest never exposes widget URLs before they are served.
   const mountAssets = (): void => {
     if (assetsMounted) return
     if (typeof app.use !== 'function') return
     try {
-      const express = _require('express') as { static: (root: string) => unknown }
       app.use(ASSET_BASE, express.static(PUBLIC_DIR))
     } catch {
       app.error(`${PLUGIN_ID}: express unavailable; cannot serve ${ASSET_BASE}`)
@@ -237,7 +235,7 @@ export default function plugin(app: SkApp): Plugin {
       running = true
       mountAssets()
       registerProvider()
-      if (!options || options['enableDemoSwitch'] !== false) {
+      if (options?.['enableDemoSwitch'] !== false) {
         startDemoSwitch()
       }
       debug('started')
