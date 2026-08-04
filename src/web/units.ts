@@ -363,6 +363,21 @@ export function resolveDisplay({
   // 3. Fallback: SK base unit + host category preference.
   let fk = defaultConversion(meta?.units, path, prefs)
   if (fk === 'none' && CONVERSIONS[fallback]) fk = fallback
+
+  // Display-only keys (iso8601, s-duration, m-nm-auto) have identity no-op
+  // conversion functions — when the user explicitly selects one, display.ts
+  // intercepts before reaching resolveDisplay.  But when they arise from
+  // defaultConversion (the USE_DEFAULT path), we must apply the formatter here.
+  if (fk === 'iso8601' && typeof value === 'string') {
+    return { value: formatTimestamp(value), symbol: '' }
+  }
+  if (fk === 's-duration' && typeof value === 'number') {
+    return { value: formatDuration(value), symbol: '' }
+  }
+  if (fk === 'm-nm-auto' && typeof value === 'number') {
+    return { value: formatDistance(value), symbol: '' }
+  }
+
   return { value: convert(value, fk), symbol: (CONVERSIONS[fk] ?? NONE_CONV).units }
 }
 
