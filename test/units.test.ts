@@ -267,3 +267,35 @@ test('defaultConversion returns iso8601 for RFC 2822 and ISO 8601 units', () => 
 test('defaultConversion returns s-duration for s units', () => {
   assert.strictEqual(defaultConversion('s', 'navigation.course.calcValues.timeToGo', null), 's-duration')
 })
+
+// ─── resolveDisplay: display-only keys via USE_DEFAULT ────────────────────────
+// When the user has "Server default" and defaultConversion resolves to a
+// display-only key, resolveDisplay must apply the formatter — not the identity.
+
+test('resolveDisplay: USE_DEFAULT + ISO 8601 units formats the timestamp', () => {
+  const r = resolveDisplay({
+    value: '2025-07-25T14:30:00Z',
+    convert: USE_DEFAULT,
+    meta: { units: 'RFC 2822' },
+    prefs: null,
+    path: 'navigation.course.calcValues.estimatedTimeOfArrival'
+  })
+  // Must be a formatted time string, not the raw ISO string.
+  assert.notStrictEqual(r.value, '2025-07-25T14:30:00Z',
+    'resolveDisplay must format ISO timestamps, not pass them through raw')
+  assert.strictEqual(typeof r.value, 'string')
+})
+
+test('resolveDisplay: USE_DEFAULT + s units formats the duration', () => {
+  const r = resolveDisplay({
+    value: 3600,
+    convert: USE_DEFAULT,
+    meta: { units: 's' },
+    prefs: null,
+    path: 'navigation.course.calcValues.timeToGo'
+  })
+  // Must be a formatted duration string, not the raw number 3600.
+  assert.notStrictEqual(r.value, 3600,
+    'resolveDisplay must format durations, not pass raw seconds through')
+  assert.strictEqual(typeof r.value, 'string')
+})
