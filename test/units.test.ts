@@ -284,6 +284,11 @@ test('resolveDisplay: USE_DEFAULT + ISO 8601 units formats the timestamp', () =>
   assert.notStrictEqual(r.value, '2025-07-25T14:30:00Z',
     'resolveDisplay must format ISO timestamps, not pass them through raw')
   assert.strictEqual(typeof r.value, 'string')
+  // Formatted output must not retain the raw ISO 8601 structure (the 'T' and
+  // 'Z' markers).  The exact format depends on the delta from Date.now().
+  assert.ok(!/T\d{2}:\d{2}.*Z$/.test(r.value as string),
+    `expected formatted output, not ISO: ${r.value as string}`)
+  assert.strictEqual(r.symbol, '')
 })
 
 test('resolveDisplay: USE_DEFAULT + s units formats the duration', () => {
@@ -294,8 +299,32 @@ test('resolveDisplay: USE_DEFAULT + s units formats the duration', () => {
     prefs: null,
     path: 'navigation.course.calcValues.timeToGo'
   })
-  // Must be a formatted duration string, not the raw number 3600.
-  assert.notStrictEqual(r.value, 3600,
-    'resolveDisplay must format durations, not pass raw seconds through')
-  assert.strictEqual(typeof r.value, 'string')
+  // Must be the exact formatDuration output, not the raw number or String(3600).
+  assert.strictEqual(r.value, '01:00:00')
+  assert.strictEqual(r.symbol, '')
+})
+
+test('resolveDisplay: m-nm-auto via fallback formats distance adaptively', () => {
+  // m-nm-auto is reachable when a caller passes it as `fallback` and
+  // defaultConversion returns 'none' (e.g. unknown meta units).
+  const r = resolveDisplay({
+    value: 1852,
+    convert: USE_DEFAULT,
+    meta: undefined,
+    prefs: null,
+    fallback: 'm-nm-auto'
+  })
+  assert.strictEqual(r.value, '1.0 nm')
+  assert.strictEqual(r.symbol, '')
+
+  // Sub-threshold: below 0.5 nm shows metres.
+  const r2 = resolveDisplay({
+    value: 100,
+    convert: USE_DEFAULT,
+    meta: undefined,
+    prefs: null,
+    fallback: 'm-nm-auto'
+  })
+  assert.strictEqual(r2.value, '100 m')
+  assert.strictEqual(r2.symbol, '')
 })
