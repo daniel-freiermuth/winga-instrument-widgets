@@ -291,7 +291,9 @@ test('resolveDisplay: USE_DEFAULT + ISO 8601 units formats the timestamp', () =>
   assert.strictEqual(r.symbol, '')
 })
 
-test('resolveDisplay: USE_DEFAULT + s units formats the duration', () => {
+test('resolveDisplay: USE_DEFAULT + s units returns numeric identity (not formatted)', () => {
+  // s-duration formatting belongs in display.ts, not resolveDisplay, because
+  // gauge.ts and meter.ts need a numeric value for needle/bar position.
   const r = resolveDisplay({
     value: 3600,
     convert: USE_DEFAULT,
@@ -299,8 +301,7 @@ test('resolveDisplay: USE_DEFAULT + s units formats the duration', () => {
     prefs: null,
     path: 'navigation.course.calcValues.timeToGo'
   })
-  // Must be the exact formatDuration output, not the raw number or String(3600).
-  assert.strictEqual(r.value, '01:00:00')
+  assert.strictEqual(r.value, 3600)
   assert.strictEqual(r.symbol, '')
 })
 
