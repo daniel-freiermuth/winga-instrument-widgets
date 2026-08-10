@@ -304,6 +304,20 @@ test('resolveDisplay: USE_DEFAULT + s units formats the duration', () => {
   assert.strictEqual(r.symbol, '')
 })
 
+test('resolveDisplay: s-duration via USE_DEFAULT returns numeric value for gauge/meter', () => {
+  // gauge.ts:45 and meter.ts:30 check typeof display === 'number' to compute
+  // needle/bar position. A string result makes frac=0 and formatValue returns '--'.
+  const r = resolveDisplay({
+    value: 3600,
+    convert: USE_DEFAULT,
+    meta: { units: 's' },
+    prefs: null,
+    path: 'navigation.course.calcValues.timeToGo'
+  })
+  assert.strictEqual(typeof r.value, 'number',
+    `gauge/meter need a numeric display value, got ${typeof r.value}: ${String(r.value)}`)
+})
+
 test('resolveDisplay: m-nm-auto via fallback formats distance adaptively', () => {
   // m-nm-auto is reachable when a caller passes it as `fallback` and
   // defaultConversion returns 'none' (e.g. unknown meta units).
