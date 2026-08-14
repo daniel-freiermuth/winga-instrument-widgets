@@ -96,12 +96,13 @@ function webAssets() {
 <body class="panel">
 <div id="root">
 <h2>Winga Instrument Widgets</h2>
-<p class="status">This package provides gauge, meter, switch and display
-widgets for chartplotters that support the Signal K
+<p class="status">This package provides gauge, meter, switch, display, distance
+and time widgets for chartplotters that support the Signal K
 <code>plotterExtensions</code> resource type (e.g. Freeboard-SK). There is
-nothing to configure here: in your chartplotter, press and hold an empty
-widget area to add a widget, and press and hold a placed widget to
-configure it.</p>
+nothing to configure here: in your chartplotter, press and hold an empty widget
+area to add a widget. The gauge, meter, switch and display widgets are then
+configured by pressing and holding the placed widget; distance and time need no
+setup — tap them to cycle what they show.</p>
 </div>
 </body>
 </html>`)

@@ -76,7 +76,7 @@ a (re)load. A mode with no value yet renders `--`.
 
 - **Distance**: cycles distance-to-goal (`…route.distance`) →
   distance-to-waypoint (`…distance`). Metres render adaptively — whole metres
-  under 0.5 nm, one-decimal nautical miles above.
+  below 0.5 nm, one-decimal nautical miles at 0.5 nm and above.
 - **Time**: cycles ETA-goal (`…route.estimatedTimeOfArrival`) → ETA-waypoint
   (`…estimatedTimeOfArrival`) → TTG-goal (`…route.timeToGo`) → TTG-waypoint
   (`…timeToGo`). ETA values (ISO 8601 strings) render as compact local time;
