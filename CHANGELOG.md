@@ -5,6 +5,18 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **Distance widget** — a zero-configuration course readout. Starts on
+  distance-to-goal (route end) and cycles to distance-to-waypoint (next point)
+  on tap. Distances display adaptively (whole metres below 0.5 nm; one-decimal
+  nautical miles at 0.5 nm and above).
+- **Time widget** — a zero-configuration course readout that cycles on tap
+  through ETA (goal), ETA (waypoint), TTG (goal) and TTG (waypoint). ETAs show
+  as local time-of-arrival, TTGs as a countdown duration.
+
 ## [0.3.1] - 2026-07-18
 
 ### Added

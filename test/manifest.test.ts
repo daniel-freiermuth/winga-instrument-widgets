@@ -79,18 +79,26 @@ test('registers a read-only plotterExtensions provider with a valid manifest', a
 
   const widgets = getManifestField(manifest, 'widgets')
   assert.ok(Array.isArray(widgets))
-  assert.strictEqual(widgets.length, 4)
+  assert.strictEqual(widgets.length, 6)
   assert.deepStrictEqual(
     widgets.map((w: unknown) => getManifestField(w, 'id')),
-    ['gauge', 'meter', 'switch', 'display']
+    ['gauge', 'meter', 'switch', 'display', 'distance', 'time']
   )
+  // Widgets that name a config panel must reference the one this manifest ships;
+  // the zero-config cyclic widgets (distance, time) name none.
+  const CONFIGURABLE = new Set(['gauge', 'meter', 'switch', 'display'])
   for (const widget of widgets) {
     const size = getManifestField(widget, 'size')
     assert.ok(typeof size === 'string' && /^[12]x[12]$/.test(size))
     assert.strictEqual(getManifestField(widget, 'type'), 'iframe')
     const url = getManifestField(widget, 'url')
     assert.ok(typeof url === 'string' && url.startsWith('/plotterext/winga-instrument-widgets/'))
-    assert.strictEqual(getManifestField(widget, 'configPanel'), 'instrument-config')
+    const configPanel = getManifestField(widget, 'configPanel')
+    if (CONFIGURABLE.has(getManifestField(widget, 'id') as string)) {
+      assert.strictEqual(configPanel, 'instrument-config')
+    } else {
+      assert.strictEqual(configPanel, undefined)
+    }
   }
 
   const panels = getManifestField(manifest, 'panels')

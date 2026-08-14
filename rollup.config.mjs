@@ -34,7 +34,7 @@ const tsOpts = {
   }
 }
 
-const webEntries = ['gauge', 'meter', 'switch', 'display', 'config']
+const webEntries = ['gauge', 'meter', 'switch', 'display', 'distance', 'time', 'config']
 
 // ─── HTML shells ─────────────────────────────────────────────────────────────
 
@@ -77,11 +77,16 @@ function webAssets() {
     closeBundle() {
       cpSync(join(root, 'src/web/instruments.css'), join(pub, 'instruments.css'))
       cpSync(join(root, 'src/web/assets'), join(pub, 'assets'), { recursive: true })
+      // Progress goes to stderr (console.error): npm 10 runs `prepare` during
+      // `npm pack --json`, and anything on stdout corrupts that JSON.
+      console.error('web-assets: copied instruments.css and assets/')
 
       writeFileSync(join(pub, 'gauge.html'),   widgetPage('gauge',   'Gauge'))
       writeFileSync(join(pub, 'meter.html'),   widgetPage('meter',   'Meter'))
       writeFileSync(join(pub, 'switch.html'),  widgetPage('switch',  'Switch'))
       writeFileSync(join(pub, 'display.html'), widgetPage('display', 'Display Value'))
+      writeFileSync(join(pub, 'distance.html'), widgetPage('distance', 'Distance'))
+      writeFileSync(join(pub, 'time.html'),    widgetPage('time',     'Time'))
       writeFileSync(join(pub, 'config.html'),  panelPage('config',   'Instrument Setup'))
 
       writeFileSync(join(pub, 'index.html'), `<!doctype html>
@@ -91,15 +96,17 @@ function webAssets() {
 <body class="panel">
 <div id="root">
 <h2>Winga Instrument Widgets</h2>
-<p class="status">This package provides gauge, meter, switch and display
-widgets for chartplotters that support the Signal K
+<p class="status">This package provides gauge, meter, switch, display, distance
+and time widgets for chartplotters that support the Signal K
 <code>plotterExtensions</code> resource type (e.g. Freeboard-SK). There is
-nothing to configure here: in your chartplotter, press and hold an empty
-widget area to add a widget, and press and hold a placed widget to
-configure it.</p>
+nothing to configure here: in your chartplotter, press and hold an empty widget
+area to add a widget. The gauge, meter, switch and display widgets are then
+configured by pressing and holding the placed widget; distance and time need no
+setup — tap them to cycle what they show.</p>
 </div>
 </body>
 </html>`)
+      console.error('web-assets: generated 8 HTML pages (7 widgets/panel + index)')
     }
   }
 }

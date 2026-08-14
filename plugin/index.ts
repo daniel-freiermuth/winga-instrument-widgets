@@ -64,7 +64,8 @@ function buildManifest(): Record<string, unknown> {
   return {
     name: 'Winga Instrument Widgets',
     description:
-      'Single-value instrument widgets: gauge, percent meter and switch.',
+      'Instrument widgets: gauge, percent meter, switch, display, plus ' +
+      'tap-to-cycle distance and time course widgets.',
     version: pkg.version,
     apiVersion: '1',
     requires: ['widgets', 'panels.iframe', 'signalk.stream'],
@@ -104,6 +105,22 @@ function buildManifest(): Record<string, unknown> {
         url: `${ASSET_BASE}/display.html`,
         size: '1x1',
         configPanel: 'instrument-config',
+        lifecycle: 'whileEnabled'
+      },
+      {
+        id: 'distance',
+        title: 'Distance (DTG)',
+        type: 'iframe',
+        url: `${ASSET_BASE}/distance.html`,
+        size: '1x1',
+        lifecycle: 'whileEnabled'
+      },
+      {
+        id: 'time',
+        title: 'Time (ETA / TTG)',
+        type: 'iframe',
+        url: `${ASSET_BASE}/time.html`,
+        size: '1x1',
         lifecycle: 'whileEnabled'
       }
     ],

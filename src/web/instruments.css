@@ -191,6 +191,41 @@ svg rect.track {
   white-space: nowrap;
 }
 
+/* Cyclic widgets (distance, time) — tap to cycle modes */
+.cyclic {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  color: #e8edf2;
+  text-align: center;
+  width: 100%;
+  padding: 2px;
+  box-sizing: border-box;
+  cursor: pointer;
+  user-select: none;
+}
+.cyclic-top {
+  font-size: 13px;
+  color: #9fb3c4;
+  max-width: 97%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cyclic-value {
+  font-size: min(24vw, 42vh);
+  font-weight: 600;
+  line-height: 1.05;
+}
+.cyclic-dots {
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: #6c7f8e;
+  line-height: 1;
+}
+
 /* Config panel */
 body.panel {
   background: #1d242b;
