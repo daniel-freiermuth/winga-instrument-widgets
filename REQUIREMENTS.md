@@ -17,12 +17,16 @@ the plugin id `signalk-instrument-widgets`:
   any of these must not offer the extension.
 - `optional: ["signalk.put"]` — the switch widget degrades to display-only
   on hosts without PUT relay.
-- Four widgets, all `type: "iframe"`, all naming `configPanel:
-  "instrument-config"`, all `lifecycle: "whileEnabled"`:
-  - `gauge` — size `1x1`
-  - `meter` — size `2x1`
-  - `switch` — size `1x1`
-  - `display` — size `1x1`
+- Six widgets, all `type: "iframe"`, all `lifecycle: "whileEnabled"`. The four
+  configurable widgets name `configPanel: "instrument-config"`; the two
+  zero-config course widgets name no config panel (the host provides a
+  remove-only dialog on long-press):
+  - `gauge` — size `1x1`, config panel
+  - `meter` — size `2x1`, config panel
+  - `switch` — size `1x1`, config panel
+  - `display` — size `1x1`, config panel
+  - `distance` — size `1x1`, no config panel
+  - `time` — size `1x1`, no config panel
 - One panel: `instrument-config`, `type: "iframe"`, `lifecycle: "onOpen"`.
 - All asset URLs are server-relative under
   `/plotterext/signalk-instrument-widgets/` (hosts resolve them against the
@@ -61,6 +65,22 @@ Per widget:
   optional larger bottom label. A blank label renders nothing (the value
   re-centers). Example: top "Speed over ground", bottom "SOG", value in the
   middle. Label text is HTML-escaped before rendering.
+
+The **distance** and **time** widgets use a separate shared runtime
+(`src/web/cyclic.ts`): they take no configuration, subscribe to a fixed set of
+well-known `navigation.course.calcValues.*` paths at once, and render one mode
+at a time. A short tap advances to the next mode (wrapping around); a long
+press or drag is ignored so it can reach the host's remove gesture. The
+selected mode is in-memory only, so each widget starts on its first mode after
+a (re)load. A mode with no value yet renders `--`.
+
+- **Distance**: cycles distance-to-goal (`…route.distance`) →
+  distance-to-waypoint (`…distance`). Metres render adaptively — whole metres
+  under 0.5 nm, one-decimal nautical miles above.
+- **Time**: cycles ETA-goal (`…route.estimatedTimeOfArrival`) → ETA-waypoint
+  (`…estimatedTimeOfArrival`) → TTG-goal (`…route.timeToGo`) → TTG-waypoint
+  (`…timeToGo`). ETA values (ISO 8601 strings) render as compact local time;
+  TTG values (seconds) render as a duration.
 
 ## 3. Configuration panel
 
@@ -122,6 +142,9 @@ min, max     number   gauge dial bounds
 decimals     number   displayed decimal places
 ```
 
+The `distance` and `time` widgets persist nothing (no config panel, no state);
+their selected mode lives only in memory.
+
 Conversion keys: `default` (follow the server/host display preference — the
 default), `none`, `ms-kn`, `ms-kmh`, `ms-mph`, `k-c`, `k-f`, `rad-deg`,
 `ratio-pct`, `m-ft`, `m-nm`, `m-km`, `pa-hpa`. Unknown keys must behave as
@@ -159,13 +182,15 @@ Playback/demo servers rarely have writable switch paths, so by default
 `node --test` must cover at minimum:
 
 - Provider registration: type `plotterExtensions`; manifest shape (api
-  version, required capabilities, three iframe widgets with valid sizes and
-  config panel references, asset URL prefix); single-resource get;
-  rejection of unknown ids and of set/delete.
+  version, required capabilities, six iframe widgets with valid sizes, correct
+  ids, and config-panel references only on the four configurable widgets; asset
+  URL prefix); single-resource get; rejection of unknown ids and of
+  set/delete.
 - Demo switch: PUT handler registration, initial delta emission, toggle
   round-trip, opt-out via configuration.
 - Stopped-plugin behavior (empty list, rejecting get).
 
 End-to-end verification (manual, against a host implementation): place each
-widget, configure a path, observe live values; toggle the switch; confirm
-config changes apply without reloading the host.
+widget, configure a path, observe live values; toggle the switch; tap the
+distance/time widgets to cycle their modes; confirm config changes apply
+without reloading the host.

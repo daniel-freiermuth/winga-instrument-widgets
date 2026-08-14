@@ -34,7 +34,7 @@ const tsOpts = {
   }
 }
 
-const webEntries = ['gauge', 'meter', 'switch', 'display', 'config']
+const webEntries = ['gauge', 'meter', 'switch', 'display', 'distance', 'time', 'config']
 
 // ─── HTML shells ─────────────────────────────────────────────────────────────
 
@@ -82,6 +82,8 @@ function webAssets() {
       writeFileSync(join(pub, 'meter.html'),   widgetPage('meter',   'Meter'))
       writeFileSync(join(pub, 'switch.html'),  widgetPage('switch',  'Switch'))
       writeFileSync(join(pub, 'display.html'), widgetPage('display', 'Display Value'))
+      writeFileSync(join(pub, 'distance.html'), widgetPage('distance', 'Distance'))
+      writeFileSync(join(pub, 'time.html'),    widgetPage('time',     'Time'))
       writeFileSync(join(pub, 'config.html'),  panelPage('config',   'Instrument Setup'))
 
       writeFileSync(join(pub, 'index.html'), `<!doctype html>
