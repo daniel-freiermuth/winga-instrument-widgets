@@ -77,6 +77,9 @@ function webAssets() {
     closeBundle() {
       cpSync(join(root, 'src/web/instruments.css'), join(pub, 'instruments.css'))
       cpSync(join(root, 'src/web/assets'), join(pub, 'assets'), { recursive: true })
+      // Progress goes to stderr (console.error): npm 10 runs `prepare` during
+      // `npm pack --json`, and anything on stdout corrupts that JSON.
+      console.error('web-assets: copied instruments.css and assets/')
 
       writeFileSync(join(pub, 'gauge.html'),   widgetPage('gauge',   'Gauge'))
       writeFileSync(join(pub, 'meter.html'),   widgetPage('meter',   'Meter'))
@@ -102,6 +105,7 @@ configure it.</p>
 </div>
 </body>
 </html>`)
+      console.error('web-assets: generated 8 HTML pages (7 widgets/panel + index)')
     }
   }
 }

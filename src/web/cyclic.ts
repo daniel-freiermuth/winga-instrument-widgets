@@ -26,6 +26,7 @@ export interface CyclicMode {
 const TAP_MAX_MS = 500
 const TAP_MAX_MOVE = 12
 
+/** Render a mode indicator like `●○○` — one glyph per mode, filled at `active`. */
 function dots(count: number, active: number): string {
   let out = ''
   for (let i = 0; i < count; i++) out += i === active ? '●' : '○'
@@ -58,6 +59,23 @@ export async function startCyclic(modes: CyclicMode[]): Promise<void> {
   }
   render()
 
+  const advance = (): void => {
+    index = (index + 1) % modes.length
+    render()
+  }
+
+  // Keyboard operability: the widget acts as a button that advances on
+  // Enter/Space. The attributes and listener live on the persistent #root
+  // element (render() only replaces its children), so they survive re-renders.
+  root.tabIndex = 0
+  root.setAttribute('role', 'button')
+  root.setAttribute('aria-label', 'Cycle navigation mode')
+  root.addEventListener('keydown', (e) => {
+    if (e.key !== 'Enter' && e.key !== ' ') return
+    e.preventDefault()
+    advance()
+  })
+
   // Tap-to-cycle, guarding against long-press and drags (see constants above).
   let downT = 0
   let downX = 0
@@ -73,8 +91,7 @@ export async function startCyclic(modes: CyclicMode[]): Promise<void> {
       Math.abs(e.clientX - downX) > TAP_MAX_MOVE ||
       Math.abs(e.clientY - downY) > TAP_MAX_MOVE
     ) return
-    index = (index + 1) % modes.length
-    render()
+    advance()
   })
 
   const paths = [...new Set(modes.map((m) => m.path))]

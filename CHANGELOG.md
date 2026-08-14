@@ -11,8 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Distance widget** — a zero-configuration course readout. Starts on
   distance-to-goal (route end) and cycles to distance-to-waypoint (next point)
-  on tap. Distances display adaptively (metres under 0.5 nm, nautical miles
-  above).
+  on tap. Distances display adaptively (metres below 0.5 nm, nautical miles at
+  or above).
 - **Time widget** — a zero-configuration course readout that cycles on tap
   through ETA (goal), ETA (waypoint), TTG (goal) and TTG (waypoint). ETAs show
   as local time-of-arrival, TTGs as a countdown duration.

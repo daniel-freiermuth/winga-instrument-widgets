@@ -190,7 +190,9 @@ Playback/demo servers rarely have writable switch paths, so by default
   round-trip, opt-out via configuration.
 - Stopped-plugin behavior (empty list, rejecting get).
 
-End-to-end verification (manual, against a host implementation): place each
-widget, configure a path, observe live values; toggle the switch; tap the
-distance/time widgets to cycle their modes; confirm config changes apply
-without reloading the host.
+End-to-end verification (manual, against a host implementation):
+- Configurable widgets (gauge, meter, switch, display): place each, configure a
+  path, observe live values; toggle the switch; confirm config changes apply
+  without reloading the host.
+- Zero-config widgets (distance, time): place each — no setup — observe live
+  values on the well-known course paths, and tap to cycle through the modes.
