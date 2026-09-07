@@ -89,6 +89,37 @@ test('applyFormula passes bad input through unchanged', () => {
   assert.strictEqual(applyFormula(5, 'nope()'), 5)
 })
 
+test('applyFormula: compound K→°F formula with parens, sub, mul, add', () => {
+  // (value - 273.15) * 1.8 + 32  — the most common non-trivial SK formula.
+  const formula = '(value - 273.15) * 1.8 + 32'
+  near(applyFormula(273.15, formula), 32)      // 0 °C = 32 °F
+  near(applyFormula(373.15, formula), 212)     // 100 °C = 212 °F
+  near(applyFormula(0, formula), -459.67)      // absolute zero
+  near(applyFormula(255.3722, formula), 0, 0.01)  // 0 °F ≈ 255.372 K
+})
+
+test('applyFormula: division formula (m→nm)', () => {
+  near(applyFormula(1852, 'value / 1852'), 1)
+  near(applyFormula(0, 'value / 1852'), 0)
+  near(applyFormula(926, 'value / 1852'), 0.5)
+})
+
+test('applyFormula: parenthesized expression', () => {
+  near(applyFormula(3, '(value + 1) * 2'), 8)
+  near(applyFormula(0, '(value + 1) * 2'), 2)
+})
+
+test('applyFormula: non-linear formula is rejected', () => {
+  // value * value is quadratic — the linearity spot-check must reject it.
+  assert.strictEqual(applyFormula(5, 'value * value'), 5)
+  assert.strictEqual(applyFormula(3, 'value * value'), 3)
+})
+
+test('applyFormula: negative coefficient', () => {
+  near(applyFormula(10, 'value * -1'), -10)
+  near(applyFormula(-3, 'value * -1'), 3)
+})
+
 test('resolveDisplay: explicit per-widget conversion is the ultimate authority', () => {
   // Even when the server publishes a different displayUnits, an explicit key wins.
   const meta = {
