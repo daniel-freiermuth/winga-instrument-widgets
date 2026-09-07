@@ -43,8 +43,8 @@ importers:
         specifier: ^4.62.2
         version: 4.62.2
       signalk-plotterext-bus:
-        specifier: ^0.10.0
-        version: 0.10.0
+        specifier: ^0.11.0
+        version: 0.11.0
       tsx:
         specifier: ^4.19.0
         version: 4.23.1
@@ -1222,8 +1222,8 @@ packages:
     resolution: {integrity: sha512-6x6dK6zJdpTzF4sQeNYxwtvBzf6Eg4GtlesS94HOvTudUeyK2WXAaIfmDgsyslYrRBeFIlsi54AYsFGUuhmvrQ==}
     engines: {node: '>= 0.4'}
 
-  signalk-plotterext-bus@0.10.0:
-    resolution: {integrity: sha512-KhUICGdTRJVQcRFR62phxUfUg2qeQpUg9HdcNqLmiSjVF1QKakYWcxwjYGPuHZileovnJV9h0+e4VxUzCklGDg==}
+  signalk-plotterext-bus@0.11.0:
+    resolution: {integrity: sha512-a9cc9Wa3tJ9HIquN11wzE0/ifzArmpIQHKT1AKWoQjIbl6bDxMvAz04NxJY+oQeuRwdqk74twNu843mA1z4X/A==}
 
   stable-hash-x@0.2.0:
     resolution: {integrity: sha512-o3yWv49B/o4QZk5ZcsALc6t0+eCelPc44zZsLtCQnZPDwFpDYSWcDnrv2TtMmMbQ7uKo3J0HTURCqckw23czNQ==}
@@ -2395,7 +2395,7 @@ snapshots:
       side-channel-map: 1.0.1
       side-channel-weakmap: 1.0.2
 
-  signalk-plotterext-bus@0.10.0: {}
+  signalk-plotterext-bus@0.11.0: {}
 
   stable-hash-x@0.2.0: {}
 
