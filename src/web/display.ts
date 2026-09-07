@@ -29,7 +29,7 @@ function render({ config, value, meta, prefs }: UpdateArgs): void {
       : typeof value === 'string' ? formatTimestamp(value)
       : '--'
     units = config.units ?? ''
-  } else if (key === 's-duration') {
+  } else if (key === 's-duration' || (key === USE_DEFAULT && meta?.units === 's')) {
     // Seconds number → human-readable duration.
     text = (value == null) ? '--'
       : typeof value === 'number' ? formatDuration(value)
