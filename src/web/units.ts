@@ -97,10 +97,6 @@ export function convert(value: unknown, conversionKey: string): unknown {
   return typeof value === 'number' ? conv.fn(value) : value
 }
 
-export function conversionUnits(conversionKey: string): string {
-  return (CONVERSIONS[conversionKey] ?? NONE_CONV).units
-}
-
 /** Conversion keys (see CONVERSIONS) valid per SK meta unit. */
 export const VALID_BY_UNIT: Record<string, string[]> = {
   'm/s': ['none', 'ms-kn', 'ms-kmh', 'ms-mph'],
