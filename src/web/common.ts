@@ -9,7 +9,6 @@ import { parseSkMeta, parseUnitPrefs, type SkMeta, type UnitPrefs } from './unit
 export {
   CONVERSIONS,
   USE_DEFAULT,
-  convert,
   formatDistance,
   formatDuration,
   formatTimestamp,
