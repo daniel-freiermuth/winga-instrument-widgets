@@ -111,7 +111,10 @@ a (re)load. A mode with no value yet renders `--`.
      (Signal K Unit Preferences): its `formula` converts the value and its
      `symbol`/`targetUnit` labels it. Fetched over same-origin REST
      (`.../<path>/meta`) by the widget runtime, since the bus value stream
-     carries no metadata.
+     carries no metadata. Only linear arithmetic formulas in `value` are
+     supported; a rejected formula skips this step entirely (logged once via
+     `console.warn`) so the raw value is never shown under the server's
+     target symbol.
   3. Fallback heuristic combining the path's `meta.units` with the host's
      coarse category preferences (`units.get`, capability `units`; tolerated
      absent): speed/temperature follow the preference directly; metre paths
