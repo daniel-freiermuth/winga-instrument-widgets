@@ -23,11 +23,11 @@
   ],
   "scripts": {
     "build": "rollup -c",
-    "test": "node --import tsx/esm --test test/manifest.test.ts test/units.test.ts",
+    "test": "node --import tsx/esm --test test/manifest.test.ts test/units.test.ts test/html.test.ts",
     "typecheck": "tsc --noEmit",
     "prepare": "rollup -c",
     "lint": "eslint .",
-    "check": "tsc --noEmit && eslint . && node --import tsx/esm --test test/manifest.test.ts test/units.test.ts",
+    "check": "tsc --noEmit && eslint . && node --import tsx/esm --test test/manifest.test.ts test/units.test.ts test/html.test.ts",
     "prepublishOnly": "pnpm check"
   },
   "author": "Daniel Freiermuth",
