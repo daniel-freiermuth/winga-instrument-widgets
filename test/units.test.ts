@@ -81,12 +81,12 @@ test('applyFormula evaluates server value expressions', () => {
   near(applyFormula(273.15, 'value - 273.15'), 0)
 })
 
-test('applyFormula passes bad input through unchanged', () => {
+test('applyFormula passes non-numeric input through and reports rejected formulas', () => {
   assert.strictEqual(applyFormula('x', 'value * 2'), 'x')
   assert.strictEqual(applyFormula(undefined, 'value * 2'), undefined)
-  // Unparseable / throwing formulas fall back to the raw value.
-  assert.strictEqual(applyFormula(5, 'value *'), 5)
-  assert.strictEqual(applyFormula(5, 'nope()'), 5)
+  // Unparseable / non-whitelisted formulas never echo the unconverted value.
+  assert.strictEqual(applyFormula(5, 'value *'), undefined)
+  assert.strictEqual(applyFormula(5, 'nope()'), undefined)
 })
 
 test('resolveDisplay: explicit per-widget conversion is the ultimate authority', () => {
@@ -117,6 +117,18 @@ test('resolveDisplay: displayUnits without a formula still supplies the symbol',
   const r = resolveDisplay({ value: 0.5, convert: USE_DEFAULT, meta })
   assert.strictEqual(r.value, 0.5)
   assert.strictEqual(r.symbol, '%')
+})
+
+test('resolveDisplay: a rejected server formula falls back to base unit + host preference', () => {
+  // 'sin(0)' fails the formula whitelist. The raw m/s value must not be shown
+  // under the server's 'kn' label; value and symbol must come from one conversion.
+  const meta = {
+    units: 'm/s',
+    displayUnits: { formula: 'value * 1.94384 + sin(0)', symbol: 'kn' }
+  }
+  const r = resolveDisplay({ value: 5, convert: USE_DEFAULT, meta, prefs: { speed: 'km/h' } })
+  near(r.value, 18)
+  assert.strictEqual(r.symbol, 'km/h')
 })
 
 test('resolveDisplay: falls back to base-unit + host preference without displayUnits', () => {
