@@ -189,6 +189,11 @@ Playback/demo servers rarely have writable switch paths, so by default
 - Demo switch: PUT handler registration, initial delta emission, toggle
   round-trip, opt-out via configuration.
 - Stopped-plugin behavior (empty list, rejecting get).
+- Widget runtime (`startInstrument`, run against a fake host over the real
+  bus client): config/defaults merge, meta fetch and unit-pref fallback
+  failure handling, SK resubscribe on path change, and the config-generation
+  guards — overlapping reloads must not apply stale config, meta or values,
+  nor leave a late SK subscription active.
 
 End-to-end verification (manual, against a host implementation):
 - Configurable widgets (gauge, meter, switch, display): place each, configure a
