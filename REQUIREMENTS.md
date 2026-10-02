@@ -191,6 +191,11 @@ Playback/demo servers rarely have writable switch paths, so by default
 - Stopped-plugin behavior (empty list, rejecting get).
 - `html` template escaping (`src/web/common.ts`): `& < > "` escaped in
   interpolated values, `raw()` passthrough, `String()` coercion of non-strings.
+- Widget runtime (`startInstrument`, run against a fake host over the real
+  bus client): config/defaults merge, meta fetch and unit-pref fallback
+  failure handling, SK resubscribe on path change, and the config-generation
+  guards — overlapping reloads must not apply stale config, meta or values,
+  nor leave a late SK subscription active.
 
 End-to-end verification (manual, against a host implementation):
 - Configurable widgets (gauge, meter, switch, display): place each, configure a
