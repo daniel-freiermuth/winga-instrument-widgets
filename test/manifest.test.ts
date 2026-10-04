@@ -2,6 +2,9 @@
 
 import { test } from 'node:test'
 import assert from 'node:assert'
+import { createRequire } from 'node:module'
+import type { AddressInfo } from 'node:net'
+import express from 'express'
 import pluginFactory from '../plugin/index.ts'
 import type { SkApp, Plugin } from '../plugin/index.ts'
 
@@ -183,4 +186,55 @@ test('start with null options enables demo switch by default', () => {
   assert.strictEqual(app.calls.putHandlers.length, 1, 'PUT handler registered')
   assert.strictEqual(app.calls.messages.length, 1, 'initial delta emitted')
   p.stop()
+})
+
+// The tests above import plugin/index.ts from source, where PUBLIC_DIR resolves
+// relative to plugin/ and points outside the package, so they cannot tell
+// whether the static route serves the right directory. PUBLIC_DIR's depth is
+// only correct for the rollup output (dist/plugin/index.js), so load the entry
+// the Signal K server actually loads — the package's own `exports` — mount it
+// on a real Express app, and fetch every page the manifest advertises.
+test('built plugin entry serves every manifest URL from the package public/ dir', async (t) => {
+  const require = createRequire(import.meta.url)
+  let entry: string
+  try {
+    entry = require.resolve('winga-instrument-widgets')
+  } catch {
+    assert.fail('dist/plugin/index.js missing — run `pnpm build` before `pnpm test`')
+  }
+  const builtFactory = require(entry) as typeof pluginFactory
+
+  const server = express()
+  const app: SkApp & { calls: FakeAppCalls } = {
+    ...fakeApp(),
+    use: (path: string, handler: unknown): void => {
+      server.use(path, handler as express.RequestHandler)
+    }
+  }
+  const p: Plugin = builtFactory(app)
+  p.start({ enableDemoSwitch: false })
+  t.after(() => { p.stop() })
+
+  const manifest = await app.calls.providers[0]!.methods.getResource('winga-instrument-widgets')
+  const pages = [
+    ...(getManifestField(manifest, 'widgets') as unknown[]),
+    ...(getManifestField(manifest, 'panels') as unknown[])
+  ].map((item) => getManifestField(item, 'url') as string)
+  assert.strictEqual(pages.length, 7)
+
+  const listener = server.listen(0, '127.0.0.1')
+  t.after(() => { listener.close() })
+  await new Promise<void>((resolve) => listener.once('listening', resolve))
+  const origin = `http://127.0.0.1:${(listener.address() as AddressInfo).port}`
+
+  for (const page of pages) {
+    const res = await fetch(origin + page)
+    assert.strictEqual(res.status, 200, `GET ${page}`)
+    const script = /<script src="(js\/[\w-]+\.js)">/.exec(await res.text())?.[1]
+    assert.ok(script !== undefined, `${page} references its bundle`)
+    const bundle = new URL(script, origin + page).pathname
+    const bundleRes = await fetch(origin + bundle)
+    assert.strictEqual(bundleRes.status, 200, `GET ${bundle}`)
+    await bundleRes.arrayBuffer()
+  }
 })
