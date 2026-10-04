@@ -199,6 +199,11 @@ Playback/demo servers rarely have writable switch paths, so by default
   failure handling, SK resubscribe on path change, and the config-generation
   guards — overlapping reloads must not apply stale config, meta or values,
   nor leave a late SK subscription active.
+- Static asset route, against the **built** entry (`dist/plugin/index.js`,
+  resolved via the package `exports`, so `pnpm build` must run first): mounted
+  on a real Express app, every widget and panel URL in the manifest, and the
+  `js/<name>.js` bundle each page references, returns 200. This catches a
+  wrong `PUBLIC_DIR` depth, which the source-imported tests cannot see.
 
 End-to-end verification (manual, against a host implementation):
 - Configurable widgets (gauge, meter, switch, display): place each, configure a
