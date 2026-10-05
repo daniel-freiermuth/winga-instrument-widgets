@@ -2,7 +2,7 @@
 // configuration, Signal K value subscription, and unit conversion.
 
 import { connectExtension, type ExtensionClient } from 'signalk-plotterext-bus/extension'
-import type { SkMeta, UnitPrefs } from './units'
+import { parseSkMeta, parseUnitPrefs, type SkMeta, type UnitPrefs } from './units'
 
 // Unit conversion / display resolution lives in units.ts (pure, no bus) so it
 // can be unit tested. Re-exported here so widgets keep a single import surface.
@@ -66,6 +66,31 @@ export interface InstrumentConfig {
   units?: string | undefined
 }
 
+const CONFIG_STRING_FIELDS = ['path', 'convert', 'label', 'topLabel', 'bottomLabel', 'units'] as const
+const CONFIG_NUMBER_FIELDS = ['decimals', 'min', 'max'] as const
+
+/**
+ * Parse the untyped state-storage record into an InstrumentConfig. State is
+ * host-persisted JSON that another client, an older plugin version or a hand
+ * edit may have shaped arbitrarily, so each field is type-checked: strings
+ * must be strings, numbers must be finite numbers (`readForm` stores NaN,
+ * which serialises as null). Invalid and unknown keys are omitted — not set
+ * to undefined — so spreading the result over widget defaults keeps the
+ * default for every field that failed to parse.
+ */
+export function parseInstrumentConfig(stored: Record<string, unknown>): InstrumentConfig {
+  const config: InstrumentConfig = {}
+  for (const key of CONFIG_STRING_FIELDS) {
+    const v = stored[key]
+    if (typeof v === 'string') config[key] = v
+  }
+  for (const key of CONFIG_NUMBER_FIELDS) {
+    const v = stored[key]
+    if (typeof v === 'number' && Number.isFinite(v)) config[key] = v
+  }
+  return config
+}
+
 /** Payload delivered to each widget's `onUpdate` callback. */
 export interface UpdateArgs {
   config: InstrumentConfig
@@ -97,7 +122,7 @@ async function fetchMeta(path: string): Promise<SkMeta | undefined> {
       { credentials: 'include' }
     )
     if (!res.ok) return undefined
-    return (await res.json()) as SkMeta
+    return parseSkMeta(await res.json())
   } catch {
     return undefined
   }
@@ -109,8 +134,8 @@ async function fetchMeta(path: string): Promise<SkMeta | undefined> {
 async function fetchPrefs(client: ExtensionClient): Promise<UnitPrefs | null> {
   if (!client.hasCapability('units')) return null
   try {
-    const r = await client.call('units.get') as { units?: UnitPrefs } | undefined
-    return r?.units ?? null
+    const r = await client.call('units.get')
+    return typeof r === 'object' && r !== null && 'units' in r ? parseUnitPrefs(r.units) : null
   } catch {
     return null
   }
@@ -131,8 +156,6 @@ export async function startInstrument({
   const client = await connectExtension()
   const prefs = await fetchPrefs(client)
 
-  // config is typed as InstrumentConfig; state storage may include extra keys
-  // which we ignore — only the typed fields are accessed after this point.
   let config: InstrumentConfig = { ...defaults }
   let value: unknown
   let meta: SkMeta | undefined
@@ -145,10 +168,7 @@ export async function startInstrument({
     const gen = ++configGen
     const stored = await client.state.get()
     if (gen !== configGen) return
-    // Spread stored (Record<string,unknown>) over typed defaults. TypeScript
-    // accepts this via contextual typing; at runtime the stored values come
-    // from Signal K state and always carry compatible InstrumentConfig types.
-    config = { ...defaults, ...stored }
+    config = { ...defaults, ...parseInstrumentConfig(stored) }
     value = undefined
     meta = undefined
     if (unsubscribeSk !== null) {
