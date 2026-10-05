@@ -17,6 +17,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   through ETA (goal), ETA (waypoint), TTG (goal) and TTG (waypoint). ETAs show
   as local time-of-arrival, TTGs as a countdown duration.
 
+### Fixed
+
+- Widgets ignore mistyped stored configuration (e.g. a string `max` or a null
+  `decimals` left by a hand edit or another client) and fall back to the
+  widget default instead of rendering wrongly. Path metadata and host unit
+  preferences with unexpected field types are likewise ignored.
+
 ## [0.3.1] - 2026-07-18
 
 ### Added
