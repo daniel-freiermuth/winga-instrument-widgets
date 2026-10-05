@@ -40,7 +40,11 @@ stopped. `setResource`/`deleteResource` always reject.
 Common (implemented once in the shared runtime):
 
 - Connect to the host with the bus client; read per-instance configuration
-  via `state.get` (instance scope).
+  via `state.get` (instance scope). Stored values are parsed per field
+  (`parseInstrumentConfig`): strings must be strings and numbers finite
+  numbers; anything else is ignored so the widget default applies. Path meta
+  (REST) and `units.get` preferences are parsed the same way (`parseSkMeta`,
+  `parseUnitPrefs`), keeping only string fields.
 - Subscribe to the configured Signal K path via `signalk.subscribe`; render
   on every value event.
 - Re-load configuration and re-subscribe on `state.changed`.
@@ -189,6 +193,8 @@ Playback/demo servers rarely have writable switch paths, so by default
 - Demo switch: PUT handler registration, initial delta emission, toggle
   round-trip, opt-out via configuration.
 - Stopped-plugin behavior (empty list, rejecting get).
+- Boundary parsing: mistyped or non-finite stored config fields fall back to
+  the widget defaults; mistyped meta / unit-preference fields are dropped.
 
 End-to-end verification (manual, against a host implementation):
 - Configurable widgets (gauge, meter, switch, display): place each, configure a

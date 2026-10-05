@@ -4,7 +4,7 @@
 // live via the host's state.changed event.
 
 import { connectExtension } from 'signalk-plotterext-bus/extension'
-import { CONVERSIONS, USE_DEFAULT, html, raw } from './common'
+import { CONVERSIONS, USE_DEFAULT, html, parseInstrumentConfig, raw } from './common'
 import { validConversions } from './units'
 import type { InstrumentConfig } from './common'
 
@@ -292,19 +292,7 @@ async function main(): Promise<void> {
   const knownPaths = knownForWidget.map((kp) => kp.path)
   const allPaths = [...knownPaths, ...paths.filter((p) => !(p in labelByPath))]
 
-  // Narrow persisted keys to the typed InstrumentConfig fields.
-  // We wrote these values ourselves via readForm, so the shapes are known.
-  const state: InstrumentConfig = {
-    path: typeof stored['path'] === 'string' ? stored['path'] : undefined,
-    convert: typeof stored['convert'] === 'string' ? stored['convert'] : undefined,
-    label: typeof stored['label'] === 'string' ? stored['label'] : undefined,
-    topLabel: typeof stored['topLabel'] === 'string' ? stored['topLabel'] : undefined,
-    bottomLabel: typeof stored['bottomLabel'] === 'string' ? stored['bottomLabel'] : undefined,
-    units: typeof stored['units'] === 'string' ? stored['units'] : undefined,
-    min: typeof stored['min'] === 'number' ? stored['min'] : undefined,
-    max: typeof stored['max'] === 'number' ? stored['max'] : undefined,
-    decimals: typeof stored['decimals'] === 'number' ? stored['decimals'] : undefined
-  }
+  const state = parseInstrumentConfig(stored)
 
   root.innerHTML = html`
     <h2>Configure ${widgetType}</h2>
