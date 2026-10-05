@@ -42,6 +42,50 @@ export interface UnitPrefs {
   length?: string
 }
 
+// ─── Boundary parsers ────────────────────────────────────────────────────────
+//
+// Meta (REST) and unit preferences (bus `units.get`) arrive as untyped JSON.
+// These parsers keep only the string fields the types declare and drop
+// everything else, so the rest of the code can trust SkMeta / UnitPrefs.
+
+const DISPLAY_UNITS_KEYS = ['formula', 'symbol', 'targetUnit'] as const
+const UNIT_PREFS_KEYS = ['speed', 'temperature', 'depth', 'distance', 'length'] as const
+
+/** `raw` as a plain key/value record, or undefined when it is not an object. */
+function asRecord(raw: unknown): Record<string, unknown> | undefined {
+  if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) return undefined
+  return raw as Record<string, unknown>
+}
+
+/** Copy the string-valued `keys` of `rec`; any other value is dropped. */
+function pickStrings<K extends string>(
+  rec: Record<string, unknown>,
+  keys: readonly K[]
+): Partial<Record<K, string>> {
+  const out: Partial<Record<K, string>> = {}
+  for (const key of keys) {
+    const v = rec[key]
+    if (typeof v === 'string') out[key] = v
+  }
+  return out
+}
+
+/** Parse a Signal K `meta` response body; undefined when it is not an object. */
+export function parseSkMeta(raw: unknown): SkMeta | undefined {
+  const rec = asRecord(raw)
+  if (rec === undefined) return undefined
+  const meta: SkMeta = pickStrings(rec, ['units'])
+  const du = asRecord(rec['displayUnits'])
+  if (du !== undefined) meta.displayUnits = pickStrings(du, DISPLAY_UNITS_KEYS)
+  return meta
+}
+
+/** Parse the `units` object of a host `units.get` reply; null when absent. */
+export function parseUnitPrefs(raw: unknown): UnitPrefs | null {
+  const rec = asRecord(raw)
+  return rec === undefined ? null : pickStrings(rec, UNIT_PREFS_KEYS)
+}
+
 export interface DisplayResult {
   value: unknown
   symbol: string

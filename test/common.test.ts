@@ -12,7 +12,7 @@ import { test, afterEach } from 'node:test'
 import assert from 'node:assert'
 import { BusEndpoint, EVENT_HANDSHAKE, EVENT_READY } from 'signalk-plotterext-bus'
 import type { BusPort, Handshake } from 'signalk-plotterext-bus'
-import { startInstrument } from '../src/web/common.ts'
+import { parseInstrumentConfig, startInstrument } from '../src/web/common.ts'
 import type { InstrumentHandle, UpdateArgs } from '../src/web/common.ts'
 
 interface Deferred<T> {
@@ -367,4 +367,46 @@ test('SK values arriving for the old generation during a reload are ignored', as
   await waitFor(() => host.skLog.length === 3, 'resubscribe')
   host.skValue('a.path', 7)
   await waitFor(() => updates.at(-1)?.value === 7, 'fresh value')
+})
+
+// Per-instance config parsing (parseInstrumentConfig): stored state is untyped
+// host JSON, so mistyped fields must fall back to the widget defaults.
+
+const GAUGE_DEFAULTS = { min: 0, max: 10, decimals: 1, label: 'Speed' }
+
+test('mistyped stored fields fall back to the widget defaults', () => {
+  const config = { ...GAUGE_DEFAULTS, ...parseInstrumentConfig({ max: '10', decimals: null, label: 5 }) }
+  assert.deepStrictEqual(config, GAUGE_DEFAULTS)
+})
+
+test('non-finite numbers are rejected so the default applies', () => {
+  const config = { ...GAUGE_DEFAULTS, ...parseInstrumentConfig({ min: NaN, max: Infinity }) }
+  assert.strictEqual(config.min, 0)
+  assert.strictEqual(config.max, 10)
+})
+
+test('well-typed stored fields override defaults; unknown keys are dropped', () => {
+  const stored = {
+    path: 'navigation.speedOverGround',
+    convert: 'ms-kn',
+    label: '',
+    topLabel: 'SOG',
+    bottomLabel: 'kn',
+    units: 'kt',
+    min: -5,
+    max: 0,
+    decimals: 0,
+    extra: 'ignored'
+  }
+  assert.deepStrictEqual(parseInstrumentConfig(stored), {
+    path: 'navigation.speedOverGround',
+    convert: 'ms-kn',
+    label: '',
+    topLabel: 'SOG',
+    bottomLabel: 'kn',
+    units: 'kt',
+    min: -5,
+    max: 0,
+    decimals: 0
+  })
 })
