@@ -161,6 +161,22 @@ test('provider returns empty list when plugin is stopped', async () => {
   assert.deepStrictEqual(await provider.methods.listResources({}), {})
 })
 
+test('provider is re-registered after the server unregisters it on stop', async () => {
+  // signalk-server's stopPlugin() runs resourcesApi.unRegister(plugin.id)
+  // before plugin.stop(), then calls start() again on the same instance
+  // (config save, disable/enable). Model that by clearing the registry.
+  const app = fakeApp()
+  const p: Plugin = pluginFactory(app)
+  p.start({})
+  app.calls.providers.length = 0
+  p.stop()
+  p.start({})
+  assert.strictEqual(app.calls.providers.length, 1, 'provider must be re-registered on restart')
+  const provider = app.calls.providers[0]!
+  const list = await provider.methods.listResources({})
+  assert.ok('winga-instrument-widgets' in list, 'manifest listed after restart')
+})
+
 test('assets are mounted synchronously during start()', () => {
   const useCalls: { path: string }[] = []
   const app: SkApp & { calls: FakeAppCalls } = {
