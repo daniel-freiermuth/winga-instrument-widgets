@@ -260,6 +260,9 @@ export default function plugin(app: SkApp): Plugin {
 
     stop(): void {
       running = false
+      // The server unregisters our resource provider before calling stop()
+      // and reuses this instance on the next start(), so register again then.
+      providerRegistered = false
       debug('stopped')
     }
   }
