@@ -17,6 +17,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   through ETA (goal), ETA (waypoint), TTG (goal) and TTG (waypoint). ETAs show
   as local time-of-arrival, TTGs as a countdown duration.
 
+### Fixed
+
+- Widgets no longer disappear from the chartplotter after saving the plugin
+  configuration or disabling and re-enabling the plugin: the
+  `plotterExtensions` provider is registered again on every start.
+
 ## [0.3.1] - 2026-07-18
 
 ### Added
