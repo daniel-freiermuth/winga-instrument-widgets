@@ -323,15 +323,20 @@ function compileFormula(formula: string): FormulaFn | null {
   return fn
 }
 
-/** Apply a server `displayUnits.formula` to a value. Returns the value
- *  unchanged if it is not a finite number or the formula cannot be evaluated. */
+/** Apply a server `displayUnits.formula` to a value. Non-numeric values pass
+ *  through unchanged. Returns `undefined` when the formula is rejected (fails
+ *  the whitelist, does not parse, or is not linear) or yields a non-finite
+ *  result, so callers can never mistake an unconverted value for a converted one. */
 export function applyFormula(value: unknown, formula: string): unknown {
   if (typeof value !== 'number' || !isFinite(value)) return value
   const fn = compileFormula(formula)
-  if (!fn) return value
+  if (!fn) return undefined
   const out = fn(value)
-  return isFinite(out) ? out : value
+  return isFinite(out) ? out : undefined
 }
+
+/** Formulas already reported as rejected, so each is warned about only once. */
+const warnedFormulas = new Set<string>()
 
 /**
  * Resolve how to display a value for a widget, honouring the authority order
@@ -351,12 +356,21 @@ export function resolveDisplay({
     if (conv) return { value: convert(value, key), symbol: conv.units }
   }
 
-  // 2. Server per-path display preference.
+  // 2. Server per-path display preference. A rejected formula skips this step
+  //    entirely: showing the raw value under the server's target symbol would
+  //    mislabel the reading, so step 3 supplies a matching value/symbol pair.
   const du = meta?.displayUnits
   if (du && (du.formula || du.symbol || du.targetUnit)) {
-    return {
-      value: du.formula ? applyFormula(value, du.formula) : value,
-      symbol: du.symbol ?? du.targetUnit ?? ''
+    const { formula } = du
+    if (!formula || compileFormula(formula) !== null) {
+      return {
+        value: formula ? applyFormula(value, formula) : value,
+        symbol: du.symbol ?? du.targetUnit ?? ''
+      }
+    }
+    if (!warnedFormulas.has(formula)) {
+      warnedFormulas.add(formula)
+      console.warn(`Ignoring unsupported displayUnits formula "${formula}"; using base-unit conversion instead`)
     }
   }
 
