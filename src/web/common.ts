@@ -10,7 +10,6 @@ export {
   CONVERSIONS,
   USE_DEFAULT,
   convert,
-  conversionUnits,
   formatDistance,
   formatDuration,
   formatTimestamp,
