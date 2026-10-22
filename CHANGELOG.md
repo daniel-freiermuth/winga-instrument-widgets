@@ -22,6 +22,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Widgets no longer disappear from the chartplotter after saving the plugin
   configuration or disabling and re-enabling the plugin: the
   `plotterExtensions` provider is registered again on every start.
+- Widgets ignore mistyped stored configuration (e.g. a string `max` or a null
+  `decimals` left by a hand edit or another client) and fall back to the
+  widget default instead of rendering wrongly. Path metadata and host unit
+  preferences with unexpected field types are likewise ignored.
 
 ## [0.3.1] - 2026-07-18
 
