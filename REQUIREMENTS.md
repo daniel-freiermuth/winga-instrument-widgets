@@ -189,6 +189,8 @@ Playback/demo servers rarely have writable switch paths, so by default
 - Demo switch: PUT handler registration, initial delta emission, toggle
   round-trip, opt-out via configuration.
 - Stopped-plugin behavior (empty list, rejecting get).
+- `html` template escaping (`src/web/common.ts`): `& < > "` escaped in
+  interpolated values, `raw()` passthrough, `String()` coercion of non-strings.
 
 End-to-end verification (manual, against a host implementation):
 - Configurable widgets (gauge, meter, switch, display): place each, configure a
