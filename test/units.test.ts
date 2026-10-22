@@ -328,3 +328,53 @@ test('resolveDisplay: m-nm-auto via fallback formats distance adaptively', () =>
   assert.strictEqual(r2.value, '100 m')
   assert.strictEqual(r2.symbol, '')
 })
+
+// ─── formatValue (common.ts) ─────────────────────────────────────────────────
+
+import { formatValue } from '../src/web/common.ts'
+
+test('formatValue: ordinary number with default decimals', () => {
+  assert.strictEqual(formatValue(3.14159), '3.1')
+})
+
+test('formatValue: explicit decimal precision 0', () => {
+  assert.strictEqual(formatValue(3.14159, 0), '3')
+})
+
+test('formatValue: explicit decimal precision 3', () => {
+  assert.strictEqual(formatValue(3.14159, 3), '3.142')
+})
+
+test('formatValue: negative number formats correctly', () => {
+  assert.strictEqual(formatValue(-12.345, 2), '-12.35')
+})
+
+test('formatValue: zero formats as number, not placeholder', () => {
+  assert.strictEqual(formatValue(0), '0.0')
+  assert.strictEqual(formatValue(0, 0), '0')
+})
+
+test("formatValue: NaN returns '--'", () => {
+  assert.strictEqual(formatValue(NaN), '--')
+})
+
+test("formatValue: Infinity returns '--'", () => {
+  assert.strictEqual(formatValue(Infinity), '--')
+  assert.strictEqual(formatValue(-Infinity), '--')
+})
+
+test("formatValue: non-number inputs return '--'", () => {
+  assert.strictEqual(formatValue(null), '--')
+  assert.strictEqual(formatValue(undefined), '--')
+  assert.strictEqual(formatValue('hello'), '--')
+  assert.strictEqual(formatValue(true), '--')
+  assert.strictEqual(formatValue(false), '--')
+})
+
+test('formatValue: very large number', () => {
+  assert.strictEqual(formatValue(1e15, 0), '1000000000000000')
+})
+
+test('formatValue: very small number', () => {
+  assert.strictEqual(formatValue(0.00001, 5), '0.00001')
+})
