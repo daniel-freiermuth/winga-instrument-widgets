@@ -407,11 +407,16 @@ export function formatDuration(seconds: number): string {
   const prefix = neg ? '-' : ''
 
   if (s < 3600) {
-    const m = Math.floor(s / 60)
-    // Floor to one decimal place to prevent the boundary "60.0" from floating-
-    // point representation of values like 3599.99.
-    const sec = Math.floor((s % 60) * 10) / 10
-    return `${prefix}${p2(m)}:${sec.toFixed(1).padStart(4, '0')}`
+    // Work in whole tenths so `% 60` and `* 10` cannot drop a tenth through
+    // binary rounding (61.3 must not render as 01:01.2). The epsilon absorbs
+    // that rounding error; truncating (never rounding up) and capping at
+    // 59:59.9 keeps values like 3599.99 from rendering "60.0" or "60:00.0".
+    const tenths = Math.min(Math.floor(s * 10 + 1e-9), 35999)
+    const m = Math.floor(tenths / 600)
+    const sec = (tenths % 600) / 10
+    // A value that truncates to zero shows no sign (no "-00:00.0").
+    const sign = tenths > 0 ? prefix : ''
+    return `${sign}${p2(m)}:${sec.toFixed(1).padStart(4, '0')}`
   }
   if (s < 86400) {
     const h = Math.floor(s / 3600)

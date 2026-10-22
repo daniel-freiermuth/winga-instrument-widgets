@@ -164,6 +164,35 @@ test('formatDuration: MM:SS.S pads single-digit seconds', () => {
   assert.strictEqual(formatDuration(5.3), '00:05.3')
 })
 
+test('formatDuration: one-decimal values after the minute wrap keep their tenth', () => {
+  assert.strictEqual(formatDuration(61.3), '01:01.3')
+  assert.strictEqual(formatDuration(121.3), '02:01.3')
+  assert.strictEqual(formatDuration(70.6), '01:10.6')
+  assert.strictEqual(formatDuration(180.1), '03:00.1')
+})
+
+test('formatDuration: every one-decimal value under 1 h renders its exact MM:SS.S', () => {
+  for (let i = 0; i < 36000; i++) {
+    const t = i / 10
+    const mm = String(Math.floor(i / 600)).padStart(2, '0')
+    const ss = String(Math.floor((i % 600) / 10)).padStart(2, '0')
+    assert.strictEqual(formatDuration(t), `${mm}:${ss}.${i % 10}`, `t=${t}`)
+  }
+})
+
+test('formatDuration: just under 1 h truncates to 59:59.9, never 60.0', () => {
+  assert.strictEqual(formatDuration(3599.95), '59:59.9')
+  assert.strictEqual(formatDuration(3599.99), '59:59.9')
+  assert.strictEqual(formatDuration(3599.999999), '59:59.9')
+  assert.strictEqual(formatDuration(-3599.99), '-59:59.9')
+})
+
+test('formatDuration: negative values that truncate to zero show no sign', () => {
+  assert.strictEqual(formatDuration(-0.04), '00:00.0')
+  assert.strictEqual(formatDuration(-0.1), '-00:00.1')
+  assert.strictEqual(formatDuration(-61.3), '-01:01.3')
+})
+
 test('formatDuration: 1–24 h shows HH:MM:SS', () => {
   assert.strictEqual(formatDuration(3600), '01:00:00')
   assert.strictEqual(formatDuration(3661), '01:01:01')
