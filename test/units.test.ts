@@ -11,7 +11,9 @@ import {
   formatDuration,
   formatTimestamp,
   formatDistance,
-  USE_DEFAULT
+  USE_DEFAULT,
+  parseSkMeta,
+  parseUnitPrefs
 } from '../src/web/units.ts'
 
 const near = (a: unknown, b: number, eps = 1e-4): void =>
@@ -327,4 +329,23 @@ test('resolveDisplay: m-nm-auto via fallback formats distance adaptively', () =>
   })
   assert.strictEqual(r2.value, '100 m')
   assert.strictEqual(r2.symbol, '')
+})
+
+test('parseSkMeta keeps string fields and drops mistyped ones', () => {
+  assert.deepStrictEqual(
+    parseSkMeta({ units: 'm/s', displayUnits: { formula: 42, symbol: 'kn', targetUnit: null }, zones: [] }),
+    { units: 'm/s', displayUnits: { symbol: 'kn' } }
+  )
+  assert.deepStrictEqual(parseSkMeta({ units: 7, displayUnits: 'kn' }), {})
+  assert.strictEqual(parseSkMeta(null), undefined)
+  assert.strictEqual(parseSkMeta([]), undefined)
+})
+
+test('parseUnitPrefs keeps string preferences; non-objects mean no prefs', () => {
+  assert.deepStrictEqual(
+    parseUnitPrefs({ speed: 'kn', depth: 3, temperature: 'C', other: 'x' }),
+    { speed: 'kn', temperature: 'C' }
+  )
+  assert.strictEqual(parseUnitPrefs(undefined), null)
+  assert.strictEqual(parseUnitPrefs('kn'), null)
 })
