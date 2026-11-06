@@ -9,7 +9,6 @@ import type { SkMeta, UnitPrefs } from './units'
 export {
   CONVERSIONS,
   USE_DEFAULT,
-  convert,
   conversionUnits,
   formatDistance,
   formatDuration,

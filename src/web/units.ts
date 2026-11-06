@@ -92,7 +92,7 @@ export const CONVERSIONS: Record<string, ConversionDef> = {
   'm-nm-auto': { label: 'Distance (auto: m or nm)', units: '', fn: (v) => v }
 }
 
-export function convert(value: unknown, conversionKey: string): unknown {
+function convert(value: unknown, conversionKey: string): unknown {
   const conv = CONVERSIONS[conversionKey] ?? NONE_CONV
   return typeof value === 'number' ? conv.fn(value) : value
 }
