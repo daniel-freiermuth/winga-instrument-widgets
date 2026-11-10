@@ -110,9 +110,10 @@ test('applyFormula: parenthesized expression', () => {
 })
 
 test('applyFormula: non-linear formula is rejected', () => {
-  // value * value is quadratic — the linearity spot-check must reject it.
-  assert.strictEqual(applyFormula(5, 'value * value'), 5)
-  assert.strictEqual(applyFormula(3, 'value * value'), 3)
+  // value * value is quadratic — the linearity spot-check must reject it, and a
+  // rejected formula never echoes the unconverted value.
+  assert.strictEqual(applyFormula(5, 'value * value'), undefined)
+  assert.strictEqual(applyFormula(3, 'value * value'), undefined)
 })
 
 test('applyFormula: negative coefficient', () => {
